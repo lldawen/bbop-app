@@ -18,6 +18,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
 import ConfirmationModal from '../common/confirmationModal';
+import { ThemeProvider } from '@mui/material';
+import { theme } from '@/pages';
 
 const UserForm = ({ userId }) => {
 
@@ -151,7 +153,7 @@ const UserForm = ({ userId }) => {
     }
 
     return (
-        <>
+        <ThemeProvider theme={theme}>
             <Header />
             <Container component="main" maxWidth="xs">
                 <Box
@@ -394,7 +396,7 @@ const UserForm = ({ userId }) => {
                 yesAction={null}
                 noAction={null}
             />
-        </>
+        </ThemeProvider>
     )
 }
 

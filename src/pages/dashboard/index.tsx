@@ -7,6 +7,8 @@ import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import ConfirmationModal from '@/components/common/confirmationModal';
+import { ThemeProvider } from '@mui/material';
+import { theme } from '..';
 
 const UserIdLink = ({ userId }) => <Link href={`/user/details/${encodeURIComponent(userId)}`}>{userId}</Link>;
 
@@ -94,7 +96,7 @@ export default function DataGridDemo() {
   }
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <Header />
       <Box sx={{ width: '90%', margin: '20px auto' }}>
         <DataGrid
@@ -117,7 +119,7 @@ export default function DataGridDemo() {
           <Button variant="contained" color="success" onClick={goToSignupPage}>
             Add User
           </Button>
-          <Button variant="contained" color="error" onClick={deleteSelectedUsers}>
+          <Button variant="contained" color="error" disabled={rowSelectionModel.length == 0} onClick={deleteSelectedUsers}>
             Delete User
           </Button>
         </Stack>
@@ -140,6 +142,6 @@ export default function DataGridDemo() {
         yesAction={null}
         noAction={null}
       />
-    </>
+    </ThemeProvider>
   );
 }

@@ -1,4 +1,5 @@
 import Header from '@/components/common/header';
+import { ThemeProvider } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
@@ -10,6 +11,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
+import { theme } from '..';
 
 const LoginPage = () => {
 
@@ -46,7 +48,7 @@ const LoginPage = () => {
     };
 
     return (
-        <>
+        <ThemeProvider theme={theme}>
             <Header />
             <Container component="main" maxWidth="xs">
                 <Box
@@ -108,7 +110,7 @@ const LoginPage = () => {
                     </Box>
                 </Box>
             </Container>
-        </>
+        </ThemeProvider>
     )
 }
 
