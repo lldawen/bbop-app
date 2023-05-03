@@ -1,11 +1,12 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { DataGrid, GridColDef, GridRowId, GridRowModel, GridRowSelectionModel, GridValueGetterParams } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import Header from '@/components/common/header';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import ConfirmationModal from '@/components/common/confirmationModal';
 
 const UserIdLink = ({ userId }) => <Link href={`/user/details/${encodeURIComponent(userId)}`}>{userId}</Link>;
 
@@ -13,15 +14,14 @@ const columns: GridColDef[] = [
   {
     field: 'id',
     headerName: 'User ID',
-    // description: 'This column has a value getter and is not sortable.',
     sortable: true,
-    width: 300,
+    width: 320,
     renderCell: (data) => <UserIdLink userId={data.id} />,
   },
   {
     field: 'fullName',
     headerName: 'Full Name',
-    // width: 400,
+    width: 350,
     editable: false,
   },
   {
@@ -41,35 +41,39 @@ const columns: GridColDef[] = [
 
 export default function DataGridDemo() {
 
-    const [rows, setRows] = React.useState([]);
-    let dataFetched = React.useRef(false);
-    const router = useRouter();
-    const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
+  const[pageState, setPageState] = React.useState({
+    isLoading: false,
+    rows: [],
+    rowCount: 0,
+  });
 
-    React.useEffect(initializeGridData, []);
+  const router = useRouter();
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
+  const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 5 });
+  
+  const [deleteMsgOpen, setDeleteMsgOpen] = React.useState(false);
+  const handleDeleteMsgOpen = () => setDeleteMsgOpen(true);
+  const handleDeleteMsgClose = () => setDeleteMsgOpen(false);
 
-  function initializeGridData() {
-    if (!dataFetched.current) {
-      fetch("http://localhost:8081/api/v1/user/all")
-      .then(response => response.json())
-      .then(response => {
-          setRows(setUserDetails(response.data));
-      });
-      dataFetched.current = true;
+  const [successMsgOpen, setSuccessMsgOpen] = React.useState(false);
+  const handleSuccessMsgOpen = () => setSuccessMsgOpen(true);
+  const handleSuccessMsgClose = () => setSuccessMsgOpen(false);
+
+  React.useEffect(refreshDataGrid, [paginationModel.page, paginationModel.pageSize]);
+
+  function refreshDataGrid() {
+    async function fetchUserData() {
+      const response = await fetch(`http://localhost:8081/api/v1/user/all?size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+      const json = await response.json();
+      setPageState((prevState) => ({
+        ...prevState,
+        rows: json.data,
+        rowCount: json.others.total,
+      }));
+      console.log('refreshDataGrid: ', pageState);
+      console.log('paginationModel: ', paginationModel);
     }
-  }
-
-  function setUserDetails(userList) {
-    let userDataList = [];
-    for (let user of userList) {
-      userDataList.push({
-        id: user.id,
-        fullName: user.firstName, //TODO
-        role: user.role,
-        isActive: user.userDetail && user.userDetail.active ? 'Yes' : 'No',
-      });
-    }
-    return userDataList;
+    fetchUserData();
   }
 
   function goToSignupPage() {
@@ -77,10 +81,16 @@ export default function DataGridDemo() {
   }
 
   function deleteSelectedUsers() {
+    handleDeleteMsgOpen();
+  }
+
+  function confirmDeleteUsers() {
     for (const userId of rowSelectionModel) {
       fetch(`http://localhost:8081/api/v1/user/delete/${userId}`, { method: 'DELETE' })
-      .then(response => initializeGridData);
+      .then(response => { refreshDataGrid(); });
     }
+    handleDeleteMsgClose();
+    handleSuccessMsgOpen();
   }
 
   return (
@@ -88,21 +98,17 @@ export default function DataGridDemo() {
       <Header />
       <Box sx={{ width: '90%', margin: '20px auto' }}>
         <DataGrid
-          rows={rows}
           columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 5,
-              },
-            },
-          }}
-          pageSizeOptions={[5]}
+          rows={pageState.rows}
+          rowCount={pageState.rowCount}
+          loading={pageState.isLoading}
+          pageSizeOptions={[5, 10, 20, 50]}
+          paginationMode="server"
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
           checkboxSelection
-          onRowSelectionModelChange={(newRowSelectionModel) => {
-            setRowSelectionModel(newRowSelectionModel);
-          }}
-          rowSelectionModel={rowSelectionModel}  
+          rowSelectionModel={rowSelectionModel}
+          onRowSelectionModelChange={(newRowSelectionModel) => { setRowSelectionModel(newRowSelectionModel); }}
           disableRowSelectionOnClick
         />
       </Box>
@@ -116,6 +122,24 @@ export default function DataGridDemo() {
           </Button>
         </Stack>
       </Box>
+      <ConfirmationModal
+        open={deleteMsgOpen}
+        handleClose={handleDeleteMsgClose}
+        action="Delete" 
+        message="Are you sure you want to delete the selected record(s)?"
+        okAction={null}
+        yesAction={confirmDeleteUsers}
+        noAction={handleDeleteMsgClose}
+      />
+      <ConfirmationModal
+        open={successMsgOpen}
+        handleClose={handleSuccessMsgClose}
+        action="Success" 
+        message="Record(s) deleted!"
+        okAction={handleSuccessMsgClose}
+        yesAction={null}
+        noAction={null}
+      />
     </>
   );
 }

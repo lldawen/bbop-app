@@ -17,6 +17,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
+import ConfirmationModal from '../common/confirmationModal';
 
 const UserForm = ({ userId }) => {
 
@@ -42,7 +43,15 @@ const UserForm = ({ userId }) => {
         }
     });
     const router = useRouter();
-      
+
+    const [saveMsgOpen, setSaveMsgOpen] = React.useState(false);
+    const handleSaveMsgOpen = () => setSaveMsgOpen(true);
+    const handleSaveMsgClose = () => setSaveMsgOpen(false);
+
+    const [successMsgOpen, setSuccessMsgOpen] = React.useState(false);
+    const handleSuccessMsgOpen = () => setSuccessMsgOpen(true);
+    const handleSuccessMsgClose = () => setSuccessMsgOpen(false);
+
     function setUserState(fieldName: any, newValue: any) {
         setUser((prevState) => ({
             ...prevState,
@@ -103,7 +112,22 @@ const UserForm = ({ userId }) => {
         initializeUserDetails();
     }, []);
 
-    async function saveUserDetails(userDetails: any) {
+    
+    function handleSubmit(event: any) {
+        event.preventDefault();
+        handleSaveMsgOpen();
+    }
+
+    function confirmSave() {
+        saveUserDetails();
+    }
+
+    function redirectToDashboard() {
+        handleSuccessMsgClose();
+        router.push('/dashboard');
+    }
+
+    async function saveUserDetails() {
         const url = isUpdate ? `http://localhost:8081/api/v1/user/update/${userId}` : `http://localhost:8081/auth/register`;
         const result = await fetch(url, {
             method: isUpdate ? 'PUT' : 'POST',
@@ -114,15 +138,9 @@ const UserForm = ({ userId }) => {
             },
         });
         if (result.ok) {
-            router.push('/dashboard');
+            handleSuccessMsgOpen();
         }
     }
-
-    function handleSubmit(event: any) {
-        event.preventDefault();
-        console.log('user: ', user);
-        saveUserDetails(user);
-    };
 
     function setDateOfBirth(newValue: any) {
         const dateOfBirthEl: HTMLElement | null = document.getElementById('birthDate');
@@ -358,6 +376,24 @@ const UserForm = ({ userId }) => {
                     </Box>
                 </Box>
             </Container>
+            <ConfirmationModal
+                open={saveMsgOpen}
+                handleClose={handleSaveMsgClose}
+                action="Save" 
+                message="Proceed to save?"
+                okAction={null}
+                yesAction={confirmSave}
+                noAction={handleSaveMsgClose}
+            />
+            <ConfirmationModal
+                open={successMsgOpen}
+                handleClose={handleSuccessMsgClose}
+                action="Success" 
+                message="Account has been saved!"
+                okAction={redirectToDashboard}
+                yesAction={null}
+                noAction={null}
+            />
         </>
     )
 }
