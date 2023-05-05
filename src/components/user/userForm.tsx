@@ -350,6 +350,9 @@ const UserForm = ({ userId }) => {
                         >
                             <MenuItem value='P1'>Purok 1</MenuItem>
                             <MenuItem value='P2'>Purok 2</MenuItem>
+                            <MenuItem value='P2'>Purok 3</MenuItem>
+                            <MenuItem value='P2'>Purok 4</MenuItem>
+                            <MenuItem value='P2'>Purok 5</MenuItem>
                         </Select>
                     </FormControl>
                     <FormControl fullWidth margin="normal">
@@ -362,8 +365,10 @@ const UserForm = ({ userId }) => {
                             onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }}
                             label="Street Name"
                         >
+                            <MenuItem value='S1'>Bagonpook Ave.</MenuItem>
                             <MenuItem value='S1'>Lina</MenuItem>
                             <MenuItem value='S2'>Macasaet</MenuItem>
+                            <MenuItem value='S2'>Villapando</MenuItem>
                         </Select>
                     </FormControl>
 

@@ -83,10 +83,6 @@ const LoginPage = () => {
                         id="password"
                         autoComplete="current-password"
                     />
-                    {/* <FormControlLabel
-                        control={<Checkbox value="remember" />}
-                        label="Remember me"
-                    /> */}
                     <Button
                         type="submit"
                         fullWidth
@@ -102,7 +98,7 @@ const LoginPage = () => {
                         </Link>
                         </Grid>
                         <Grid item>
-                        <Link href="#" variant="body2">
+                        <Link href="/user/signup" variant="body2">
                             {"Don't have an account? Sign Up"}
                         </Link>
                         </Grid>
