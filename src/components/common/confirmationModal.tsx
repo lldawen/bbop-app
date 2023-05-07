@@ -36,27 +36,27 @@ export default function ConfirmationModal({ open, handleClose, action, message, 
       >
         <Box sx={style}>
           <Typography id="modal-modal-title" variant="h6" component="h2">
-            Confirm {action}
+            {action}
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
             {message}
           </Typography>
           <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
             { okAction && (
-                <Button variant="contained" color="success" onClick={okAction}>
+                <Button variant="contained" onClick={okAction}>
                   OK
                 </Button>
               )
             }
             { yesAction && (
-                <Button variant="contained" color="success" onClick={yesAction}>
+                <Button variant="contained" onClick={yesAction}>
                   Yes
                 </Button>
               )
             }
             { noAction && (
-                <Button variant="contained" color="success" onClick={noAction}>
-                  no
+                <Button variant="contained" onClick={noAction}>
+                  No
                 </Button>
               )
             }
