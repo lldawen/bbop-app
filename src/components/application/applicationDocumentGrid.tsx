@@ -1,39 +1,18 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { DataGrid, GridArrowDownwardIcon, GridColDef, GridDeleteIcon, GridRowSelectionModel } from '@mui/x-data-grid';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { FormControl, InputLabel, MenuItem, Select, TextField, ThemeProvider, Typography } from '@mui/material';
-import Message from '../common/messageBox';
-import MessageBox from '../common/messageBox';
-import ConfirmationModal from '../common/confirmationModal';
+import ConfirmationModal, { closeMessagePrompt, showMessageBox } from '../common/confirmationModal';
+import { closeMessageBox } from '../common/confirmationModal';
+import { getDropdownOptions } from '../common/util';
+import { DisabledByDefault } from '@mui/icons-material';
 
 const ApplDocIdLink = ({ applDocId }) => <Link style={{ textDecoration: 'underline', color: 'blue' }} href={`/dashboard/application/document/get/${applDocId}`}>{applDocId}</Link>;
 
-const columns: GridColDef[] = [
-  {
-    field: 'id',
-    headerName: 'Document ID',
-    sortable: false,
-    width: 150,
-  },
-  {
-    field: 'docTypeDescr',
-    headerName: 'Document Type',
-    width: 220,
-    sortable: true,
-    editable: false,
-  },
-  {
-    field: 'documentName',
-    headerName: 'File Name',
-    width: 300,
-    editable: false,
-    sortable: true,
-    renderCell: (data) => <ApplDocIdLink applDocId={data.id} />,
-  },
-];
+
 
 export default function ApplicationDocumentsGrid({ applId }) {
 
@@ -43,7 +22,7 @@ export default function ApplicationDocumentsGrid({ applId }) {
     documentType: '',
     documentTypeDescr: '',
     documentName: '',
-    documentFile: undefined as unknown,
+    documentFile: '' as string | Blob,
   });
 
   const[pageState, setPageState] = React.useState({
@@ -51,9 +30,11 @@ export default function ApplicationDocumentsGrid({ applId }) {
     rows: [],
     rowCount: 0,
   });
-  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
+  // const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 5 });
   
+  const [documentTypeList, setDocumentTypeList] = React.useState([]);
+
   const [messageBox, setMessageBox] = React.useState({
     open: false,
     action: '',
@@ -63,7 +44,10 @@ export default function ApplicationDocumentsGrid({ applId }) {
     noAction: undefined as unknown,
   });
 
-  React.useEffect(refreshDataGrid, [paginationModel.page, paginationModel.pageSize]);
+  React.useEffect(() => {
+    refreshDataGrid();
+    getDropdownOptions('DOCUMENT_TYPE', setDocumentTypeList);
+  }, [paginationModel.page, paginationModel.pageSize]);
 
   function refreshDataGrid() {
     async function fetchApplicationDocData() {
@@ -84,64 +68,32 @@ export default function ApplicationDocumentsGrid({ applId }) {
     fetchApplicationDocData();
   }
 
-  function showMessageBox(props: any) {
-    console.log('showMessageBox');
-    setMessageBox(prevState => ({
-      ...prevState,
-      open: true,
-      action: props.action,
-      message: props.message,
-      okAction: props.okAction,
-      yesAction: props.yesAction,
-      noAction: props.noAction,
-    }));
-  }
-
-  function closeMessageBox(props) {
-    console.log('closeMessageBox');
-    closeMessagePrompt();
-    setTimeout(() => {
-      showMessageBox({
-        action: props.action, 
-        message: props.message,
-        okAction: closeMessagePrompt
-      });
-    }, 500);
-  }
-
-  function closeMessagePrompt() {
-    console.log('closeMessagePrompt');
-    setMessageBox(prevState => ({
-      ...prevState,
-      open: false,
-      action: '',
-      detail: '',
-      okAction: undefined,
-      yesAction: undefined,
-      noAction: undefined,
-    }));
-  }
-
   function saveDocument() {
     showMessageBox({
       action: 'Save', 
-      message: 'Do you want to save document?',
-      yesAction: confirmSaveDocument,
-      noAction: closeMessagePrompt,
-    });
+      message: 'Do you want to save the uploaded document?',
+      yesAction: saveApplicationDetails,
+      noAction: () => closeMessagePrompt(setMessageBox),
+    }, setMessageBox);
   }
 
-  function confirmSaveDocument() {
-    console.log('confirmSaveDocument: ', applicationDocument);
-    saveApplicationDetails();
-  }
+  // function confirmSaveDocument() {
+  //   console.log('confirmSaveDocument: ', applicationDocument);
+  //   saveApplicationDetails();
+  // }
 
-  async function saveApplicationDetails() { 
+  async function saveApplicationDetails() {
+    console.log('saveApplicationDocument: ', applicationDocument);
+    const formData = new FormData();
+    formData.append('applId', applicationDocument.applId);
+    formData.append('documentType', applicationDocument.documentType);
+    formData.append('documentName', applicationDocument.documentName);
+    formData.append('documentFile', applicationDocument.documentFile);
     const result = await fetch(`http://localhost:8081/api/v1/application/document/create`, {
         method: 'POST',
-        body: JSON.stringify(applicationDocument),
+        body: formData,
         headers: {
-            'Content-type': 'application/json',
+            // 'Content-type': 'multipart/form-data',
             // 'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
     });
@@ -149,82 +101,145 @@ export default function ApplicationDocumentsGrid({ applId }) {
         closeMessageBox({
           action: 'Save', 
           message: 'Document has been saved!',
-        });
+        }, setMessageBox, refreshComponents);
     }
   }
 
-  function deleteDocument() {
+  function refreshComponents() {
+    refreshDataGrid();
+    removeUploadedDocument();
+  }
+
+  function deleteDocument(documentId) {
+    console.log('deleteDocument : ' + documentId);
     showMessageBox({
       action: 'Delete', 
       message: 'Do you want to delete the selected document(s)?',
-      yesAction: confirmDeleteDocument,
-      noAction: closeMessagePrompt,
-    });
+      yesAction: () => confirmDeleteDocument(documentId),
+      noAction: () => closeMessagePrompt(setMessageBox),
+    }, setMessageBox);
   }
 
-  function confirmDeleteDocument() {
-    for (const applDocId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/application/document/delete/${applDocId}`, { method: 'DELETE' })
-      .then(response => { refreshDataGrid(); });
-    }
+  function confirmDeleteDocument(documentId) {
+    fetch(`http://localhost:8081/api/v1/application/document/delete/${documentId}`, { method: 'DELETE' })
+    .then(response => { refreshDataGrid(); });
+
     closeMessageBox({
       action: 'Delete', 
       message: 'Document has been saved!',
-    });
+    }, setMessageBox);
   }
 
-  function downloadDocument() {
+  function removeUploadedDocument() {
+    setApplicationDocument(prevState => ({
+      ...prevState,
+      documentFile: '',
+    }));
+    document.getElementById('document-label').innerHTML = 'Please upload your supporting document e.g. ID ...';
+    document.getElementById('removeDocBtn').style.display = 'none';
+  }
 
+  function downloadDocument(documentId) {
+    console.log('downloadDocument : ' + documentId);
   }
 
   function setFieldValue(fieldName, newValue) {
-    console.log('setFieldValue: ', fieldName, newValue);
     const documentFile = document.getElementById('documentName').files[0];
     setApplicationDocument(prevState => ({
       ...prevState,
       [fieldName]: newValue,
       documentFile: documentFile,
     }));
+    const documentFileName = document.getElementById('documentName').value;
+    document.getElementById('document-label').innerHTML = `<strong>${documentFileName}</strong>`;
+    const removeDocBtn = document.getElementById('removeDocBtn');
+    if (removeDocBtn) {
+      removeDocBtn.style.display = 'inline-block';
+    }
   }
+
+  const columns: GridColDef[] = [
+    {
+      field: 'id',
+      sortable: false,
+      width: 100,
+      renderHeader: (data) => <span style={{ marginLeft: '10px', fontWeight: 'bold' }}>ID</span>,
+      renderCell: (data) => <span style={{ marginLeft: '10px' }}>{data.id}</span>,
+    },
+    {
+      field: 'documentName',
+      headerName: 'File Name',
+      width: 400,
+      editable: false,
+      sortable: true,
+    },
+    {
+      field: 'documentTypeDescr',
+      headerName: 'Document Type',
+      width: 200,
+      sortable: true,
+      editable: false,
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      headerAlign: 'center',
+      width: 100,
+      editable: false,
+      sortable: false,
+      align: 'center',
+      renderCell: (data) => <><GridArrowDownwardIcon sx={{ mr: 1, color: '#0063ba' }} onClick={() => downloadDocument(data.id)} /><GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} /></>,
+    },
+  ];
 
   return (
     <>
       <Box sx={{ width: '100%', margin: '20px auto' }}>
-        <Typography component="h1" variant="h6" sx={{ margin: '20px 0 10px' }}>Application Documents</Typography>
+        <Typography component="h1" variant="h6" sx={{ margin: '20px 0 10px' }}>Supporting Documents</Typography>
       </Box>
       
-      <Box sx={{ width: '100%', margin: '20px auto' }}>
-        <FormControl sx={{ mt: 1, mr: 2, width: 250 }} size="small">
-          <InputLabel id="docType-label">Document Type</InputLabel>
-          <Select
-              labelId="docType-label"
-              id="docType-select"
-              name="documentType"
-              value={applicationDocument.documentType}
-              onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
-              label="Document Type"
-          >
-                {/* {applTypeList.map((option) => ( */}
-                  <MenuItem key={1} value={'PASSPORT'}>{'Passport'}</MenuItem>
-                  <MenuItem key={2} value={'SSS'}>{'SSS/UMID'}</MenuItem>
-                  <MenuItem key={3} value={'DL'}>{'Driver License'}</MenuItem>
-              {/* ))}   */}
-          </Select>
-        </FormControl>
-        <Button sx={{ mt: 1, mr: 2, width: 150 }} variant="contained" component="label">
-          Upload
-          <input hidden accept="image/*" multiple type="file"
-            id="documentName"
-            name="documentName"
-            value={applicationDocument.documentName} 
-            onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
-          />
-        </Button>
-        <Box sx={{ width: '100%', margin: '20px 0' }}>
-          <FormControl sx={{ mb: 5, width: '100%' }} size="small">
-            <InputLabel id="document-label">{applicationDocument.documentName ? applicationDocument.documentName : 'Please upload a document...'}</InputLabel>
+      <Box sx={{ width: '100%', margin: '20px auto' }} >
+        <form id="applicationDocumentForm" method='POST' encType='multipart/form-data'>
+          <FormControl sx={{ mt: 1, mr: 2, width: 250 }} size="small">
+            <InputLabel id="docType-label">Document Type</InputLabel>
+            <Select
+                labelId="docType-label"
+                id="docType-select"
+                name="documentType"
+                value={applicationDocument.documentType}
+                onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
+                label="Document Type"
+            >
+            {documentTypeList.map((option) => (
+              <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
+            ))}
+            </Select>
           </FormControl>
-        </Box>
+          <Button sx={{ mt: 1, mr: 1, }} variant="contained" component="label">
+            { applicationDocument.documentFile == '' ? 'Upload' : 'Replace' }
+            <input hidden accept="image/*" multiple type="file"
+              id="documentName"
+              name="documentName"
+              value={applicationDocument.documentName} 
+              onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
+            />
+          </Button>
+          <Button sx={{ mt: 1, mr: 1, }} variant="contained" disabled={applicationDocument.documentFile == ''} type='button' onClick={saveDocument}>
+            Save
+          </Button>
+          <Box sx={{ width: '100%', margin: '20px 0' }}>
+            <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+              <FormControl sx={{ mb: 5, width: '100%' }} size="small">
+                <InputLabel id="document-label">
+                  Please upload your supporting document e.g. ID ...
+                </InputLabel>
+              </FormControl>
+              {applicationDocument.documentName != '' && (
+                <DisabledByDefault id="removeDocBtn" onClick={removeUploadedDocument} sx={{ margin: '20px 0', color: '#942230' }} />    
+              )}
+            </Stack>
+          </Box>
+        </form>
       </Box>
 
       <Box sx={{ width: '100%', height: 400, margin: '20px auto' }}>
@@ -239,24 +254,11 @@ export default function ApplicationDocumentsGrid({ applId }) {
           paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          checkboxSelection
-          rowSelectionModel={rowSelectionModel}
-          onRowSelectionModelChange={(newRowSelectionModel) => { setRowSelectionModel(newRowSelectionModel); }}
-          disableRowSelectionOnClick
+          // checkboxSelection
+          // rowSelectionModel={rowSelectionModel}
+          // onRowSelectionModelChange={(newRowSelectionModel) => { setRowSelectionModel(newRowSelectionModel); }}
+          // disableRowSelectionOnClick
         />
-      </Box>
-      <Box sx={{ width: '100%', margin: '20px auto' }}>
-        <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
-          <Button variant="contained" onClick={saveDocument}>
-            Save
-          </Button>
-          <Button variant="contained"  onClick={deleteDocument}>
-            Delete
-          </Button>
-          <Button variant="contained" disabled={rowSelectionModel.length == 0} onClick={downloadDocument}>
-            Download
-          </Button>
-        </Stack>
       </Box>
       <ConfirmationModal
         open={messageBox.open}

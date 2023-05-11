@@ -145,7 +145,9 @@ export default function ApplicationsGrid() {
             </Button>
           </Stack>
         </Box>
-
+        
+        {/* <ApplicationForm applId={10} /> */}
+        
         <ConfirmationModal
           open={deleteMsgOpen}
           handleClose={handleDeleteMsgClose}

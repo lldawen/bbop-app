@@ -19,20 +19,24 @@ const LoginPage = () => {
     const router = useRouter();
 
     async function authenticate(email: any, password: any) {
-        const result = await fetch("http://localhost:8081/auth/authenticate", {
-            method: 'POST',
-            body: JSON.stringify({ 'username': email, 'password': password }),
-            headers: {
-                'Content-type': 'application/json',
-                // 'Authorization': 'Bearer ' + localStorage.getItem('token')
-            },
-        });
-        if (result.ok) {
-            const json = await result.json();
-            setProfile(json);
-            router.push('/dashboard');
-        } else {
-            router.push('/login');
+        try {
+            const result = await fetch("http://localhost:8081/auth/authenticate", {
+                method: 'POST',
+                body: JSON.stringify({ 'username': email, 'password': password }),
+                headers: {
+                    'Content-type': 'application/json',
+                    // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+            });
+            if (result.ok) {
+                const json = await result.json();
+                setProfile(json);
+                router.push('/dashboard');
+            } else {
+                router.push('/login');
+            }
+        } catch(exception) {
+            alert('Invalid username and/or password.');
         }
     }
 
@@ -98,7 +102,7 @@ const LoginPage = () => {
                         </Link>
                         </Grid>
                         <Grid item>
-                        <Link href="/user/signup" variant="body2">
+                        <Link href="/user/create" variant="body2">
                             {"Don't have an account? Sign Up"}
                         </Link>
                         </Grid>

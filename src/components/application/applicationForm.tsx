@@ -17,10 +17,13 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
-import ConfirmationModal from '../common/confirmationModal';
+import ConfirmationModal, { showMessageBox } from '../common/confirmationModal';
 import { Checkbox, Stack, ThemeProvider } from '@mui/material';
 import { theme } from '@/pages';
 import ApplicationDocumentsGrid from './applicationDocumentGrid';
+import { closeMessagePrompt } from '../common/confirmationModal';
+import { closeMessageBox } from '../common/confirmationModal';
+import { getDropdownOptions } from '../common/util';
 
 export default function ApplicationForm({ applId }) {
 
@@ -29,12 +32,15 @@ export default function ApplicationForm({ applId }) {
     const [application, setApplication] = useState({
         applId: '',
         applicantId: 'admin@gmail.com',
+        applType: '',
         applTypeDescr: '',
+        purpose: '',
         purposeDescr: '',
         isFeeRequired: false,
         feeAmount: 0,
         feePaid: 0,
         paymentDate: '',
+        paymentMode: '',
         paymentModeDescr: '',
         status: 'S1',
         statusDescr: '',
@@ -51,35 +57,15 @@ export default function ApplicationForm({ applId }) {
 
     const router = useRouter();
 
+    const [messageBox, setMessageBox] = React.useState({
+        open: false,
+        action: '',
+        message: '',
+        okAction: undefined as unknown,
+        yesAction: undefined as unknown,
+        noAction: undefined as unknown,
+    });
     
-    const [saveMsgOpen, setSaveMsgOpen] = React.useState(false);
-    const [successMsgOpen, setSuccessMsgOpen] = React.useState(false);
-    const [msgAction, setMsgAction] = React.useState('');
-    const [msgDetail, setMsgDetail] = React.useState('');
-    
-    const handleSaveMsgOpen = (action: string, msgDetail: string) => {
-        setMsgAction(action);
-        setMsgDetail(msgDetail);
-        setSaveMsgOpen(true);
-    }
-    const handleSuccessMsgOpen = (action: string, msgDetail: string) => {
-        setTimeout(() => {
-            setMsgAction(action);
-            setMsgDetail(msgDetail);
-            setSuccessMsgOpen(true);
-        }, 300);
-    }
-    const handleSaveMsgClose = () => {
-        setMsgAction('');
-        setMsgDetail('');
-        setSaveMsgOpen(false);
-    }
-    const handleSuccessMsgClose = () => {
-        setMsgAction('');
-        setMsgDetail('');
-        setSuccessMsgOpen(false);
-    }
-
     function setApplicationState(fieldName: any, newValue: any) {
         console.log('setApplicationState: ', fieldName, newValue);
         setApplication((prevState) => ({
@@ -96,22 +82,9 @@ export default function ApplicationForm({ applId }) {
         setApplicationState('feeAmount', feeAmountVal);
     }
     
-    async function getCodes(category, setter) {
-        const response = await fetch(`http://localhost:8081/api/v1/code/category/${category}`, {
-            method: 'GET',
-            headers: {
-                'Content-type': 'application/json',
-                // 'Authorization': 'Bearer ' + localStorage.getItem('token')
-            },
-        });
-        const json = await response.json();
-        console.log('json: ', json.data);
-        setter(json.data);
-    }
-
     React.useEffect(() => {
-        getCodes('APPL_TYPE', setApplTypeList);
-        getCodes('APPL_PURPOSE', setPurposeList);
+        getDropdownOptions('APPL_TYPE', setApplTypeList);
+        getDropdownOptions('APPL_PURPOSE', setPurposeList);
         async function initializeApplicationDetails() {
             if (applId) {
                 await fetch(`http://localhost:8081/api/v1/application/get/${applId}`, {
@@ -155,24 +128,24 @@ export default function ApplicationForm({ applId }) {
     
     function handleSubmit(event: any) {
         event.preventDefault();
-        handleSaveMsgOpen('Confirm', 'Do you want to proceed submitting this application?');
+        showMessageBox({
+            action: 'Confirmation',
+            message: 'Do you want to proceed submitting this application?',
+            yesAction: saveApplicationDetails,
+            noAction: () => closeMessagePrompt(setMessageBox),
+        }, setMessageBox);
     }
 
-    function confirmSave() {
-        console.log('confirmSave: ', application);
-        saveApplicationDetails();
-    }
-
-    function redirectToDashboard() {
-        handleSuccessMsgClose();
-        router.push('/dashboard');
-    }
+    // function confirmSave() {
+    //     console.log('confirmSave: ', application);
+    //     saveApplicationDetails();
+    // }
 
     async function saveApplicationDetails() {
         const url = isUpdate 
             ? `http://localhost:8081/api/v1/application/update/${applId}` 
             : `http://localhost:8081/api/v1/application/create`;
-        const result = await fetch(url, {
+        const response = await fetch(url, {
             method: isUpdate ? 'PUT' : 'POST',
             body: JSON.stringify(application),
             headers: {
@@ -180,9 +153,12 @@ export default function ApplicationForm({ applId }) {
                 // 'Authorization': 'Bearer ' + localStorage.getItem('token')
             },
         });
-        if (result.ok) {
-            handleSaveMsgClose();
-            handleSuccessMsgOpen('Success', isUpdate ? 'Application updated!' : 'Application submitted!');
+        if (response.ok) {
+            const json = await response.json();
+            closeMessageBox({
+                action: 'Success', 
+                message: isUpdate ? 'Application updated!' : 'Application submitted!',
+            }, setMessageBox, () => router.push(`/dashboard/application/get/${json.data.id}`));
         }
     }
 
@@ -254,6 +230,7 @@ export default function ApplicationForm({ applId }) {
                             labelId="purpose-label"
                             id="purpose-select"
                             name="purpose"
+                            disabled={isUpdate}
                             value={application.purpose}
                             onChange={(e) => { setApplicationState(e.target.name, e.target.value) }}
                             label="Purpose"
@@ -307,6 +284,7 @@ export default function ApplicationForm({ applId }) {
                     <FormControl fullWidth margin="normal">
                         <RadioGroup
                             row
+                            disabled={isUpdate}
                             aria-labelledby="demo-row-radio-buttons-group-label"
                             name="paymentMode"
                             defaultValue="OTC"
@@ -336,49 +314,44 @@ export default function ApplicationForm({ applId }) {
                         </LocalizationProvider>
                     </FormControl>
                    
-                    <ApplicationDocumentsGrid applId={applId} />
+                    { applId && (<ApplicationDocumentsGrid applId={applId} />)}
 
-                    <FormControlLabel 
-                        control={
-                        <Checkbox 
-                            id="consent" 
-                            name="consent"
-                            checked={application.consent}
-                            onChange={(e) => { setApplicationState(e.target.name, e.target.checked) }}
-                        />}
-                        label="I hereby blah blah blah blah blah blah blah ....." 
-                    />
+                    {!isUpdate && (
+                    <>
+                        <FormControlLabel 
+                            control={
+                            <Checkbox 
+                                id="consent" 
+                                name="consent"
+                                checked={application.consent}
+                                onChange={(e) => { setApplicationState(e.target.name, e.target.checked) }}
+                            />}
+                            label="I hereby blah blah blah blah blah blah blah ....." 
+                        />
 
-                    <Box sx={{ width: '100%', margin: '20px auto' }}>
-                        <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
-                            <Button variant="contained" type='submit' disabled={!application.consent}>
-                            {isUpdate ? 'Update' : 'Submit'} Application
-                            </Button>
-                            <Button variant="contained" type='button' onClick={cancelApplication}>
-                                Cancel
-                            </Button>
-                        </Stack>
-                    </Box>
+                        <Box sx={{ width: '100%', margin: '20px auto' }}>
+                            <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+                                <Button variant="contained" type='submit' disabled={!application.consent}>
+                                {isUpdate ? 'Update' : 'Submit'} Application
+                                </Button>
+                                <Button variant="contained" type='button' onClick={cancelApplication}>
+                                    Cancel
+                                </Button>
+                            </Stack>
+                        </Box>
+                    </>
+                    )}
                     </Box>
                 </Box>
             </Container>
             <ConfirmationModal
-                open={saveMsgOpen}
-                handleClose={handleSaveMsgClose}
-                action={msgAction} 
-                message={msgDetail}
-                okAction={null}
-                yesAction={confirmSave}
-                noAction={handleSaveMsgClose}
-            />
-            <ConfirmationModal
-                open={successMsgOpen}
-                handleClose={handleSuccessMsgClose}
-                action={msgAction} 
-                message={msgDetail}
-                okAction={redirectToDashboard}
-                yesAction={null}
-                noAction={null}
+                open={messageBox.open}
+                handleClose={() => closeMessagePrompt(setMessageBox)}
+                action={messageBox.action}
+                message={messageBox.message}
+                okAction={messageBox.okAction}
+                yesAction={messageBox.yesAction}
+                noAction={messageBox.noAction}
             />
         </ThemeProvider>
     )

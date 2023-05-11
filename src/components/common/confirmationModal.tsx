@@ -17,6 +17,49 @@ const style = {
   p: 4,
 };
 
+export function showMessageBox(props: any, setMessageBox: Function) {
+  console.log('showMessageBox');
+  setMessageBox(prevState => ({
+    ...prevState,
+    open: true,
+    action: props.action,
+    message: props.message,
+    okAction: props.okAction,
+    yesAction: props.yesAction,
+    noAction: props.noAction,
+  }));
+}
+
+export function closeMessageBox(props, setMessageBox: Function, callbackFn?: Function | undefined) {
+  console.log('closeMessageBox');
+  closeMessagePrompt(setMessageBox);
+  setTimeout(() => {
+    showMessageBox({
+      action: props.action, 
+      message: props.message,
+      okAction: () => {
+        closeMessagePrompt(setMessageBox);
+        if (typeof callbackFn === 'function') {
+          callbackFn();
+        }
+      }
+    }, setMessageBox);
+  }, 500);
+}
+
+export function closeMessagePrompt(setMessageBox: Function) {
+  console.log('closeMessagePrompt', setMessageBox);
+  setMessageBox(prevState => ({
+    ...prevState,
+    open: false,
+    action: '',
+    detail: '',
+    okAction: undefined,
+    yesAction: undefined,
+    noAction: undefined,
+  }));
+}
+
 export default function ConfirmationModal({ open, handleClose, action, message, okAction, yesAction, noAction }) {
 
   function customOnCloseHandler(event: object, reason: string) {
