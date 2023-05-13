@@ -10,11 +10,11 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: 400,
+  width: '40%',
   bgcolor: 'background.paper',
-  border: '2px solid #000',
+  border: '2px solid #e65100',
   boxShadow: 24,
-  p: 4,
+  p: 3,
 };
 
 export function showMessageBox(props: any, setMessageBox: Function) {
@@ -81,10 +81,10 @@ export default function ConfirmationModal({ open, handleClose, action, message, 
           <Typography id="modal-modal-title" variant="h6" component="h2">
             {action}
           </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+          <Typography id="modal-modal-description" sx={{ mt: 2, mb: 2 }}>
             {message}
           </Typography>
-          <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+          <Stack direction="row" spacing={2} sx={{ mt: 0, mb: 0, mr: 0 }} justifyContent={'flex-end'}>
             { okAction && (
                 <Button variant="contained" onClick={okAction}>
                   OK

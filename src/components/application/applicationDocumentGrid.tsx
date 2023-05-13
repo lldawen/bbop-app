@@ -1,28 +1,26 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { DataGrid, GridArrowDownwardIcon, GridColDef, GridDeleteIcon, GridRowSelectionModel } from '@mui/x-data-grid';
+import { DataGrid, GridArrowDownwardIcon, GridColDef, GridDeleteIcon } from '@mui/x-data-grid';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Link from 'next/link';
-import { FormControl, InputLabel, MenuItem, Select, TextField, ThemeProvider, Typography } from '@mui/material';
+import { FormControl, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import ConfirmationModal, { closeMessagePrompt, showMessageBox } from '../common/confirmationModal';
 import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
 import { DisabledByDefault } from '@mui/icons-material';
 
-const ApplDocIdLink = ({ applDocId }) => <Link style={{ textDecoration: 'underline', color: 'blue' }} href={`/dashboard/application/document/get/${applDocId}`}>{applDocId}</Link>;
-
-
-
 export default function ApplicationDocumentsGrid({ applId }) {
 
+  type Nullable<T> = T | null;
+  
   const [applicationDocument, setApplicationDocument] = React.useState({
     id: '',
     applId: applId,
     documentType: '',
     documentTypeDescr: '',
     documentName: '',
-    documentFile: '' as string | Blob,
+    documentPath: '',
+    documentFile: null as Nullable<object>,
   });
 
   const[pageState, setPageState] = React.useState({
@@ -52,7 +50,7 @@ export default function ApplicationDocumentsGrid({ applId }) {
   function refreshDataGrid() {
     async function fetchApplicationDocData() {
       try {
-        const response = await fetch(`http://localhost:8081/api/v1/application/document/all?size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        const response = await fetch(`http://localhost:8081/api/v1/application/document/all?applId=${applId}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({
@@ -111,10 +109,9 @@ export default function ApplicationDocumentsGrid({ applId }) {
   }
 
   function deleteDocument(documentId) {
-    console.log('deleteDocument : ' + documentId);
     showMessageBox({
-      action: 'Delete', 
-      message: 'Do you want to delete the selected document(s)?',
+      action: 'Confirmation', 
+      message: 'Do you want to delete this document?',
       yesAction: () => confirmDeleteDocument(documentId),
       noAction: () => closeMessagePrompt(setMessageBox),
     }, setMessageBox);
@@ -125,37 +122,47 @@ export default function ApplicationDocumentsGrid({ applId }) {
     .then(response => { refreshDataGrid(); });
 
     closeMessageBox({
-      action: 'Delete', 
-      message: 'Document has been saved!',
+      action: 'Success', 
+      message: 'Document has been deleted!',
     }, setMessageBox);
   }
 
   function removeUploadedDocument() {
     setApplicationDocument(prevState => ({
       ...prevState,
-      documentFile: '',
+      documentName: '',
+      documentFile: null,
     }));
-    document.getElementById('document-label').innerHTML = 'Please upload your supporting document e.g. ID ...';
-    document.getElementById('removeDocBtn').style.display = 'none';
+    document.getElementById('documentName').value = '';
+    displayUploadLabelMsg();
   }
 
-  function downloadDocument(documentId) {
-    console.log('downloadDocument : ' + documentId);
+  function displayUploadLabelMsg() {
+    const documentFileName = document.getElementById('documentName').value;
+    const removeDocBtn = document.getElementById('removeDocBtn');
+    if (documentFileName) {
+      document.getElementById('document-label').innerHTML = `<strong>${documentFileName}</strong>`;
+      if (removeDocBtn) {
+        removeDocBtn.style.display = 'inline-block';
+      }
+    } else {
+      document.getElementById('document-label').innerHTML = 'Please upload your supporting document e.g. ID ...';
+      if (removeDocBtn) {
+        removeDocBtn.style.display = 'none';
+      }
+    }
   }
 
   function setFieldValue(fieldName, newValue) {
-    const documentFile = document.getElementById('documentName').files[0];
+    console.log('setFieldValue', fieldName, newValue);
+    const documentFileObj = document.getElementById('documentName').files[0];
+    const documentFile = documentFileObj && documentFileObj.name ? documentFileObj : null;
     setApplicationDocument(prevState => ({
       ...prevState,
       [fieldName]: newValue,
       documentFile: documentFile,
     }));
-    const documentFileName = document.getElementById('documentName').value;
-    document.getElementById('document-label').innerHTML = `<strong>${documentFileName}</strong>`;
-    const removeDocBtn = document.getElementById('removeDocBtn');
-    if (removeDocBtn) {
-      removeDocBtn.style.display = 'inline-block';
-    }
+    displayUploadLabelMsg();
   }
 
   const columns: GridColDef[] = [
@@ -188,18 +195,29 @@ export default function ApplicationDocumentsGrid({ applId }) {
       editable: false,
       sortable: false,
       align: 'center',
-      renderCell: (data) => <><GridArrowDownwardIcon sx={{ mr: 1, color: '#0063ba' }} onClick={() => downloadDocument(data.id)} /><GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} /></>,
+      // renderCell: (data) => <><GridArrowDownwardIcon sx={{ mr: 2, color: '#0063ba' }} onClick={() => downloadDocument(data.row.documentPath)} /><GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} /></>,
+      renderCell: (data) => (
+        <>
+          <a 
+            target="_blank" rel="noopener noreferrer"
+            href={`http://localhost:8081/api/v1/application/document/download/${data.row.documentPath}`}>
+              <GridArrowDownwardIcon sx={{ mr: 2, color: '#0063ba' }} />
+          </a>
+          <a href="javascript:void(0)">
+            <GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} />
+          </a>
+        </>
+      ),
     },
   ];
 
   return (
     <>
-      <Box sx={{ width: '100%', margin: '20px auto' }}>
+      <Box id="supportingDocSection" sx={{ width: '100%', margin: '20px auto' }}>
         <Typography component="h1" variant="h6" sx={{ margin: '20px 0 10px' }}>Supporting Documents</Typography>
       </Box>
       
       <Box sx={{ width: '100%', margin: '20px auto' }} >
-        <form id="applicationDocumentForm" method='POST' encType='multipart/form-data'>
           <FormControl sx={{ mt: 1, mr: 2, width: 250 }} size="small">
             <InputLabel id="docType-label">Document Type</InputLabel>
             <Select
@@ -216,7 +234,7 @@ export default function ApplicationDocumentsGrid({ applId }) {
             </Select>
           </FormControl>
           <Button sx={{ mt: 1, mr: 1, }} variant="contained" component="label">
-            { applicationDocument.documentFile == '' ? 'Upload' : 'Replace' }
+            { applicationDocument.documentFile == null ? 'Upload' : 'Replace' }
             <input hidden accept="image/*" multiple type="file"
               id="documentName"
               name="documentName"
@@ -224,7 +242,7 @@ export default function ApplicationDocumentsGrid({ applId }) {
               onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
             />
           </Button>
-          <Button sx={{ mt: 1, mr: 1, }} variant="contained" disabled={applicationDocument.documentFile == ''} type='button' onClick={saveDocument}>
+          <Button sx={{ mt: 1, mr: 1, }} variant="contained" disabled={applicationDocument.documentFile == null} type='button' onClick={saveDocument}>
             Save
           </Button>
           <Box sx={{ width: '100%', margin: '20px 0' }}>
@@ -239,7 +257,6 @@ export default function ApplicationDocumentsGrid({ applId }) {
               )}
             </Stack>
           </Box>
-        </form>
       </Box>
 
       <Box sx={{ width: '100%', height: 400, margin: '20px auto' }}>
@@ -257,7 +274,7 @@ export default function ApplicationDocumentsGrid({ applId }) {
           // checkboxSelection
           // rowSelectionModel={rowSelectionModel}
           // onRowSelectionModelChange={(newRowSelectionModel) => { setRowSelectionModel(newRowSelectionModel); }}
-          // disableRowSelectionOnClick
+          disableRowSelectionOnClick
         />
       </Box>
       <ConfirmationModal

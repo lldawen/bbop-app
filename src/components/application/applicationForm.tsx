@@ -42,8 +42,6 @@ export default function ApplicationForm({ applId }) {
         paymentDate: '',
         paymentMode: '',
         paymentModeDescr: '',
-        status: 'S1',
-        statusDescr: '',
         notifyViaEmail: false,
         certificateIssued: false,
         certificateIssueDate: '',
@@ -111,8 +109,6 @@ export default function ApplicationForm({ applId }) {
                         paymentDate: applData.paymentDate,
                         paymentMode: applData.paymentMode,
                         paymentModeDescr: applData.paymentModeDescr,
-                        status: applData.status,
-                        statusDescr: applData.statusDescr,
                         notifyViaEmail: applData.notifyViaEmail,
                         certificateIssued: applData.certificateIssued,
                         certificateIssueDate: applData.certificateIssueDate,
@@ -126,27 +122,19 @@ export default function ApplicationForm({ applId }) {
     }, []);
 
     
-    function handleSubmit(event: any) {
+    function saveApplication(event: any) {
         event.preventDefault();
         showMessageBox({
             action: 'Confirmation',
-            message: 'Do you want to proceed submitting this application?',
+            message: 'Do you want to save this application?',
             yesAction: saveApplicationDetails,
             noAction: () => closeMessagePrompt(setMessageBox),
         }, setMessageBox);
     }
 
-    // function confirmSave() {
-    //     console.log('confirmSave: ', application);
-    //     saveApplicationDetails();
-    // }
-
     async function saveApplicationDetails() {
-        const url = isUpdate 
-            ? `http://localhost:8081/api/v1/application/update/${applId}` 
-            : `http://localhost:8081/api/v1/application/create`;
-        const response = await fetch(url, {
-            method: isUpdate ? 'PUT' : 'POST',
+        const response = await fetch(`http://localhost:8081/api/v1/application/create`, {
+            method: 'POST',
             body: JSON.stringify(application),
             headers: {
                 'Content-type': 'application/json',
@@ -157,8 +145,33 @@ export default function ApplicationForm({ applId }) {
             const json = await response.json();
             closeMessageBox({
                 action: 'Success', 
-                message: isUpdate ? 'Application updated!' : 'Application submitted!',
+                message: 'Application has been saved!',
             }, setMessageBox, () => router.push(`/dashboard/application/get/${json.data.id}`));
+        }
+    }
+
+    function submitApplication() {
+        showMessageBox({
+            action: 'Confirmation',
+            message: 'Do you want to submit this application?',
+            yesAction: confirmSubmitApplication,
+            noAction: () => closeMessagePrompt(setMessageBox),
+        }, setMessageBox);
+    }
+
+    async function confirmSubmitApplication() {
+        const response = await fetch(`http://localhost:8081/api/v1/application/submit/${applId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-type': 'application/json',
+                // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+        });
+        if (response.ok) {
+            closeMessageBox({
+                action: 'Success', 
+                message: 'Application has been submitted!',
+            }, setMessageBox, () => router.push(`/dashboard`));
         }
     }
 
@@ -189,10 +202,10 @@ export default function ApplicationForm({ applId }) {
                     }}
                 >
                     <Typography component="h1" variant="h4" sx={{ margin: '20px 0 10px' }}>
-                        { isUpdate ? 'Edit' : 'Submit New'} Application
+                        { isUpdate ? 'Application Details' : 'Submit New Application'}
                     </Typography>
                     
-                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                    <Box component="form" onSubmit={saveApplication} noValidate sx={{ mt: 1 }} encType='multipart/form-data'>
                     
                     {isUpdate && (
                         <TextField
@@ -241,19 +254,6 @@ export default function ApplicationForm({ applId }) {
                         </Select>
                     </FormControl>
 
-                    {isUpdate && (
-                        <TextField
-                            type="number"
-                            margin="normal"
-                            fullWidth
-                            disabled
-                            id="status"
-                            label="Status"
-                            name="status"
-                            value={application.statusDescr}
-                        />
-                    )}
-
                     <Typography component="h1" variant="h6" sx={{ margin: '20px 0 10px' }}>
                         Payment Details
                     </Typography>
@@ -284,7 +284,6 @@ export default function ApplicationForm({ applId }) {
                     <FormControl fullWidth margin="normal">
                         <RadioGroup
                             row
-                            disabled={isUpdate}
                             aria-labelledby="demo-row-radio-buttons-group-label"
                             name="paymentMode"
                             defaultValue="OTC"
@@ -314,10 +313,23 @@ export default function ApplicationForm({ applId }) {
                         </LocalizationProvider>
                     </FormControl>
                    
-                    { applId && (<ApplicationDocumentsGrid applId={applId} />)}
-
                     {!isUpdate && (
+                        <Box sx={{ width: '100%', margin: '20px auto' }}>
+                            <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+                                <Button variant="contained" type='submit'>
+                                    Save
+                                </Button>
+                                <Button variant="contained" type='button' onClick={cancelApplication}>
+                                    Cancel
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+
+                    {isUpdate && (
                     <>
+                        <ApplicationDocumentsGrid applId={applId} />
+
                         <FormControlLabel 
                             control={
                             <Checkbox 
@@ -331,8 +343,8 @@ export default function ApplicationForm({ applId }) {
 
                         <Box sx={{ width: '100%', margin: '20px auto' }}>
                             <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
-                                <Button variant="contained" type='submit' disabled={!application.consent}>
-                                {isUpdate ? 'Update' : 'Submit'} Application
+                                <Button variant="contained" type='button' onClick={submitApplication} disabled={!application.consent}>
+                                    Submit Application
                                 </Button>
                                 <Button variant="contained" type='button' onClick={cancelApplication}>
                                     Cancel

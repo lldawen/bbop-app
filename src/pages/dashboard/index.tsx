@@ -9,8 +9,6 @@ import { useRouter } from 'next/router';
 import ConfirmationModal from '@/components/common/confirmationModal';
 import { Container, ThemeProvider, Typography } from '@mui/material';
 import { theme } from '..';
-import ApplicationDocumentsGrid from '@/components/application/applicationDocumentGrid';
-import ApplicationForm from '@/components/application/applicationForm';
 
 const ApplIdLink = ({ applId }) => <Link style={{ textDecoration: 'underline', color: 'blue' }} href={`/dashboard/application/get/${applId}`}>{applId}</Link>;
 
@@ -69,7 +67,7 @@ export default function ApplicationsGrid() {
   function refreshDataGrid() {
     async function fetchApplicationData() {
       try {
-        const response = await fetch(`http://localhost:8081/api/v1/application/all?size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        const response = await fetch(`http://localhost:8081/api/v1/application/all?userId=${'admin@gmail.com'}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({
