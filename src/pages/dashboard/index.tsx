@@ -9,8 +9,7 @@ import { useRouter } from 'next/router';
 import ConfirmationModal, { closeMessageBox, closeMessagePrompt, showMessageBox } from '@/components/common/confirmationModal';
 import { Container, ThemeProvider, Typography } from '@mui/material';
 import { theme } from '..';
-
-const ApplIdLink = ({ applId }) => <Link style={{ textDecoration: 'underline', color: 'blue' }} href={`/dashboard/application/get/${applId}`}>{applId}</Link>;
+import CustomLink from '@/components/common/customLink';
 
 const columns: GridColDef[] = [
   {
@@ -18,7 +17,7 @@ const columns: GridColDef[] = [
     headerName: 'Application ID',
     sortable: true,
     width: 150,
-    renderCell: (data) => <ApplIdLink applId={data.id} />,
+    renderCell: (data) => <CustomLink href={`/dashboard/application/get/${data.id}`} text={data.id} />
   },
   {
     field: 'applTypeDescr',

@@ -463,6 +463,9 @@ export default function ApplicationForm({ applId, isAdmin }) {
                                     </>
                                 )}
                                 {application.status == 'A' && <CertificateMenu applId={applId} />}
+                                <Button variant="contained" type='button' onClick={() => router.push('/admin/dashboard')}>
+                                    Back
+                                </Button>
                             </Stack>
                         </Box>
                     )}

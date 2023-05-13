@@ -165,17 +165,19 @@ const UserForm = ({ userId }) => {
         <ThemeProvider theme={theme}>
             <Header />
             <Container component="main" maxWidth="xs">
+                <Box sx={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "center", }}>
+                    <Typography component="h1" variant="h4">
+                        { isUpdate ? 'Update' : 'Create'} User Account
+                    </Typography>
+                </Box>
                 <Box
                     sx={{
-                    marginTop: 8,
+                    marginTop: 2,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     }}
                 >
-                    <Typography component="h1" variant="h5">
-                    { isUpdate ? 'Update' : 'Create'} User Account
-                    </Typography>
                     <Box component="form" onSubmit={saveUserAccount} noValidate sx={{ mt: 1 }}>
                     <TextField
                         margin="normal"
@@ -220,7 +222,7 @@ const UserForm = ({ userId }) => {
                         />
                     )}
 
-                    <Typography component="h1" variant="h5">
+                    <Typography sx={{ mt: 3, mb: 1 }} component="h1" variant="h5">
                         Personal Information
                     </Typography>
                     
@@ -268,7 +270,7 @@ const UserForm = ({ userId }) => {
                             name="gender"
                         >
                             {genderList.map((option) => (
-                                <FormControlLabel key={option.code} value={option.code} control={<Radio />} label={option.codeDescription} onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }} />
+                                <FormControlLabel key={option.code} checked={option.code == user.userDetail.gender} value={option.code} control={<Radio />} label={option.codeDescription} onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }} />
                             ))}
                         </RadioGroup>
                     </FormControl>
@@ -333,7 +335,7 @@ const UserForm = ({ userId }) => {
                         autoFocus
                     />
 
-                    <Typography component="h1" variant="h5">
+                    <Typography sx={{ mt: 3, mb: 1 }} component="h1" variant="h5">
                         Address
                     </Typography>
 

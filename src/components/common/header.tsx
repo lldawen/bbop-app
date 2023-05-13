@@ -11,13 +11,58 @@ import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { appendAdminUrl } from './util';
 
-const settings = ['My Dashboard', 'Profile', 'Logout'];
-
-export default function Header() {
+export default function Header({ isPublicPage = false }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const [profile, setProfile] = React.useState();
+  const [userMenuList, setUserMenuList] = React.useState(['My Dashboard', 'Profile', 'Logout']);
   const router = useRouter();
+
+  const defaultMenuList = ['My Dashboard', 'Profile', 'Logout'];
+  const adminMenuList = ['My Dashboard', 'Manage Users', 'Profile', 'Logout'];
+
+  React.useEffect(() => {
+    console.log('profile,', profile);
+    if (!isPublicPage) {
+      checkProfile();
+    }
+    console.log('header ISADMIN ', isAdmin);
+  }, []);
+
+  async function checkProfile() {
+    try {
+        const result = await fetch("http://localhost:8081/auth/checkProfile", {
+            method: 'GET',
+            headers: {
+                'Content-type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+            },
+        });
+        if (result.ok) {
+            const json = await result.json();
+            setIsLoggedIn(true);
+            setProfile(json);
+            initializeUserMenu(json?.role == 'ADMIN');
+        } else {
+            setIsLoggedIn(false);
+            router.push(appendAdminUrl(isAdmin) + '/login');
+        }
+    } catch(exception) {
+        console.log('Invalid username and/or password.', exception);
+    }
+  }
+
+  function initializeUserMenu(isAdmin) {
+    setIsAdmin(profile?.role == 'ADMIN');
+    if (isAdmin) {
+      setUserMenuList(adminMenuList);
+    } else {
+      setUserMenuList(defaultMenuList);
+    }
+  }
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -28,13 +73,14 @@ export default function Header() {
   };
 
   const handleUserMenuNavigation = (selectedMenu) => {
-    if (selectedMenu == 'My Dashboard') {
-      router.push('/dashboard');
+    if (selectedMenu == 'Manage Users') {
+      router.push('/admin/user/all');
+    } else if (selectedMenu == 'My Dashboard') {
+      router.push(appendAdminUrl(isAdmin) + '/dashboard');
     } else if (selectedMenu == 'Profile') {
-      router.push('/user/details/junjun@gmail.com');
+      router.push(appendAdminUrl(isAdmin) + `/user/get/${profile.id}`);
     } else if (selectedMenu == 'Logout') {
-      setIsLoggedIn(false);
-      router.push('/');
+      logout();
     }
   }
 
@@ -42,6 +88,12 @@ export default function Header() {
     console.log('goToPage: ', url, router);
     router.push(url);
   };
+
+  function logout() {
+      localStorage.removeItem('token');
+      setIsLoggedIn(false);
+      router.push('/');
+  }
 
   return (
     <AppBar position="static">
@@ -87,9 +139,9 @@ export default function Header() {
                     open={Boolean(anchorElUser)}
                     onClose={handleCloseUserMenu}
                   >
-                    {settings.map((setting) => (
-                      <MenuItem key={setting} onClick={() => { handleUserMenuNavigation(setting); }}>
-                        <Typography textAlign="center">{setting}</Typography>
+                    {userMenuList.map((userMenu) => (
+                      <MenuItem key={userMenu} onClick={() => { handleUserMenuNavigation(userMenu); }}>
+                        <Typography textAlign="center">{userMenu}</Typography>
                       </MenuItem>
                     ))}
                   </Menu>

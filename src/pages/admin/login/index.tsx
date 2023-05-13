@@ -14,6 +14,12 @@ const AdminLoginPage = () => {
     const [profile, setProfile] = useState();
     const router = useRouter();
 
+    function handleSubmit(event: any) {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        authenticate(data.get('email'), data.get('password'));
+    }
+
     async function authenticate(email: any, password: any) {
         try {
             const result = await fetch("http://localhost:8081/auth/admin/authenticate", {
@@ -21,11 +27,11 @@ const AdminLoginPage = () => {
                 body: JSON.stringify({ 'username': email, 'password': password, signInAsAdmin: true }),
                 headers: {
                     'Content-type': 'application/json',
-                    // 'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
             });
             if (result.ok) {
                 const json = await result.json();
+                localStorage.setItem('token', json.data.token);
                 setProfile(json);
                 router.push('/admin/dashboard');
             } else {
@@ -36,20 +42,9 @@ const AdminLoginPage = () => {
         }
     }
 
-    function logout() {
-        localStorage.removeItem('token');
-        router.push('/admin/login');
-    }
-
-    function handleSubmit(event: any) {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        authenticate(data.get('email'), data.get('password'));
-    };
-
     return (
         <ThemeProvider theme={theme}>
-            <Header />
+            <Header isPublicPage={true} />
             <Container component="main" maxWidth="xs">
                 <Box
                     sx={{  

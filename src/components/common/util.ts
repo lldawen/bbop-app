@@ -14,3 +14,8 @@ export function getDropdownOptions(category: string, setter: Function) {
     }
     getCodes(category, setter);
 }
+
+
+export function appendAdminUrl(isAdmin: boolean) {
+    return isAdmin ? '/admin' : '';
+}
