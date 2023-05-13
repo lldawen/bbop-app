@@ -6,42 +6,11 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import ConfirmationModal from '@/components/common/confirmationModal';
+import ConfirmationModal, { closeMessageBox, closeMessagePrompt, showMessageBox } from '@/components/common/confirmationModal';
 import { ThemeProvider } from '@mui/material';
 import { theme } from '../..';
 
-const UserIdLink = ({ userId }) => <Link href={`/user/get/${encodeURIComponent(userId)}`}>{userId}</Link>;
-
-const columns: GridColDef[] = [
-  {
-    field: 'id',
-    headerName: 'User ID',
-    sortable: true,
-    width: 320,
-    renderCell: (data) => <UserIdLink userId={data.id} />,
-  },
-  {
-    field: 'fullName',
-    headerName: 'Full Name',
-    width: 350,
-    editable: false,
-  },
-  {
-    field: 'role',
-    headerName: 'Role',
-    width: 180,
-    editable: false,
-  },
-  {
-    field: 'isActive',
-    headerName: 'Is Active?',
-    // type: 'number',
-    width: 180,
-    editable: false,
-  },
-];
-
-export default function DataGridDemo() {
+export default function UsersGrid() {
 
   const[pageState, setPageState] = React.useState({
     isLoading: false,
@@ -53,15 +22,64 @@ export default function DataGridDemo() {
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 5 });
   
-  const [deleteMsgOpen, setDeleteMsgOpen] = React.useState(false);
-  const handleDeleteMsgOpen = () => setDeleteMsgOpen(true);
-  const handleDeleteMsgClose = () => setDeleteMsgOpen(false);
-
-  const [successMsgOpen, setSuccessMsgOpen] = React.useState(false);
-  const handleSuccessMsgOpen = () => setSuccessMsgOpen(true);
-  const handleSuccessMsgClose = () => setSuccessMsgOpen(false);
+  const [messageBox, setMessageBox] = React.useState({
+    open: false,
+    action: '',
+    message: '',
+    okAction: undefined as unknown,
+    yesAction: undefined as unknown,
+    noAction: undefined as unknown,
+  });
 
   React.useEffect(refreshDataGrid, [paginationModel.page, paginationModel.pageSize]);
+  
+  const columns: GridColDef[] = [
+    {
+      field: 'id',
+      headerName: 'User ID',
+      sortable: true,
+      width: 250,
+      renderHeader: (data) => <span style={{ marginLeft: '10px', fontWeight: 'bold' }}>User ID</span>,
+      renderCell: (data) => <Link style={{ color: '#942230', marginLeft: '10px', textDecoration: 'underlined', fontWeight: 'bold' }} href={`/user/get/${encodeURIComponent(data.id)}`}>{data.id}</Link>,
+    },
+    {
+      field: 'fullName',
+      headerName: 'Full Name',
+      width: 330,
+      editable: false,
+    },
+    {
+      field: 'role',
+      headerName: 'Role',
+      width: 120,
+      editable: false,
+    },
+    {
+      field: 'isActive',
+      headerName: 'Is Active?',
+      // type: 'number',
+      width: 120,
+      editable: false,
+    },
+    {
+      field: 'Action',
+      headerName: 'Action',
+      headerAlign: 'center',
+      width: 230,
+      editable: false,
+      align: 'center',
+      renderCell: (data) => { console.log(data); return (
+        <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+          <Button id="activeToggleBtn" sx={{ fontSize: '.8em' }} variant="outlined" type='button' onClick={() => toggleActiveStatus(data.id, data.row.isActive)}>
+              {data.row.isActive == 'Yes' ? 'Deactivate' : 'Activate'}
+            </Button>
+            <Button id="roleToggleBtn" sx={{ fontSize: '.8em' }} variant="outlined" type='button' onClick={() => toggleRole(data.id, data.row.role)}>
+              {data.row.role == 'USER' ? 'Set as Admin' : 'Set as User'}
+            </Button>
+        </Stack>
+      )},
+    },
+  ];
 
   function refreshDataGrid() {
     async function fetchUserData() {
@@ -72,8 +90,6 @@ export default function DataGridDemo() {
         rows: json.data,
         rowCount: json.others.total,
       }));
-      console.log('refreshDataGrid: ', pageState);
-      console.log('paginationModel: ', paginationModel);
     }
     fetchUserData();
   }
@@ -82,17 +98,27 @@ export default function DataGridDemo() {
     router.push('/user/create');
   }
 
-  function deleteSelectedUsers() {
-    handleDeleteMsgOpen();
+  function toggleActiveStatus(userId, isActive) {
+    const action = isActive == 'Yes' ? 'deactivate' : 'activate';
+    fetch(`http://localhost:8081/api/v1/user/${action}/${userId}`, { method: 'PUT' })
+    .then(response => { 
+      closeMessageBox({
+        action: 'Success', 
+        message: `The selected user has been successfully ${action}d!`,
+      }, setMessageBox, refreshDataGrid);
+    });
   }
 
-  function confirmDeleteUsers() {
-    for (const userId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/user/delete/${userId}`, { method: 'DELETE' })
-      .then(response => { refreshDataGrid(); });
-    }
-    handleDeleteMsgClose();
-    handleSuccessMsgOpen();
+  function toggleRole(userId, role) {
+    const isUser = role == 'USER';
+    const action = isUser ? 'setAsAdmin' : 'setAsUser';
+    fetch(`http://localhost:8081/api/v1/user/${action}/${userId}`, { method: 'PUT' })
+    .then(response => { 
+      closeMessageBox({
+        action: 'Success', 
+        message: 'Admin role has been ' + (isUser ? 'added to' : 'removed from') + ' the selected user!',
+      }, setMessageBox, refreshDataGrid);
+    });
   }
 
   return (
@@ -104,43 +130,26 @@ export default function DataGridDemo() {
           rows={pageState.rows}
           rowCount={pageState.rowCount}
           loading={pageState.isLoading}
-          pageSizeOptions={[5, 10, 20, 50]}
           paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          checkboxSelection
-          rowSelectionModel={rowSelectionModel}
-          onRowSelectionModelChange={(newRowSelectionModel) => { setRowSelectionModel(newRowSelectionModel); }}
-          disableRowSelectionOnClick
         />
       </Box>
       <Box sx={{ width: '90%', margin: '20px auto' }}>
         <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
           <Button variant="contained" onClick={goToSignupPage}>
-            Add User
-          </Button>
-          <Button variant="contained" color="error" disabled={rowSelectionModel.length == 0} onClick={deleteSelectedUsers}>
-            Delete User
+            Add
           </Button>
         </Stack>
       </Box>
       <ConfirmationModal
-        open={deleteMsgOpen}
-        handleClose={handleDeleteMsgClose}
-        action="Delete" 
-        message="Are you sure you want to delete the selected record(s)?"
-        okAction={null}
-        yesAction={confirmDeleteUsers}
-        noAction={handleDeleteMsgClose}
-      />
-      <ConfirmationModal
-        open={successMsgOpen}
-        handleClose={handleSuccessMsgClose}
-        action="Success" 
-        message="Record(s) deleted!"
-        okAction={handleSuccessMsgClose}
-        yesAction={null}
-        noAction={null}
+        open={messageBox.open}
+        handleClose={closeMessagePrompt}
+        action={messageBox.action}
+        message={messageBox.message}
+        okAction={messageBox.okAction}
+        yesAction={messageBox.yesAction}
+        noAction={messageBox.noAction}
       />
     </ThemeProvider>
   );

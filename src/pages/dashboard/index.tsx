@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import ConfirmationModal from '@/components/common/confirmationModal';
+import ConfirmationModal, { closeMessageBox, closeMessagePrompt, showMessageBox } from '@/components/common/confirmationModal';
 import { Container, ThemeProvider, Typography } from '@mui/material';
 import { theme } from '..';
 
@@ -54,13 +54,14 @@ export default function ApplicationsGrid() {
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 5 });
   
-  const [successMsgOpen, setSuccessMsgOpen] = React.useState(false);
-  const handleSuccessMsgOpen = () => setSuccessMsgOpen(true);
-  const handleSuccessMsgClose = () => setSuccessMsgOpen(false);
-  
-  const [deleteMsgOpen, setDeleteMsgOpen] = React.useState(false);
-  const handleDeleteMsgOpen = () => setDeleteMsgOpen(true);
-  const handleDeleteMsgClose = () => setDeleteMsgOpen(false);
+  const [messageBox, setMessageBox] = React.useState({
+    open: false,
+    action: '',
+    message: '',
+    okAction: undefined as unknown,
+    yesAction: undefined as unknown,
+    noAction: undefined as unknown,
+  });
 
   React.useEffect(refreshDataGrid, [paginationModel.page, paginationModel.pageSize]);
 
@@ -88,20 +89,43 @@ export default function ApplicationsGrid() {
   }
 
   function deleteSelectedApplications() {
-    handleDeleteMsgOpen();
-  }
-
-  function withdrawSelectedApplications() {
-    handleDeleteMsgOpen();
+    showMessageBox({
+      action: 'Confirmation', 
+      message: 'Do you want to delete the selected application?',
+      yesAction: confirmDeleteApplications,
+      noAction: () => closeMessagePrompt(setMessageBox),
+    }, setMessageBox);
   }
 
   function confirmDeleteApplications() {
     for (const applId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/application/delete/${applId}`, { method: 'DELETE' })
+      fetch(`http://localhost:8081/api/v1/application/delete/${applId}`, { method: 'PUT' })
       .then(response => { refreshDataGrid(); });
     }
-    handleDeleteMsgClose();
-    setTimeout(handleSuccessMsgOpen, 300);
+    closeMessageBox({
+      action: 'Success', 
+      message: 'The selected application has been successfully deleted!',
+    }, setMessageBox);
+  }
+
+  function withdrawSelectedApplications() {
+    showMessageBox({
+      action: 'Confirmation', 
+      message: 'Do you want to withdraw the selected application?',
+      yesAction: confirmWithdrawSelectedApplications,
+      noAction: () => closeMessagePrompt(setMessageBox),
+    }, setMessageBox);
+  }
+
+  function confirmWithdrawSelectedApplications() {
+    for (const applId of rowSelectionModel) {
+      fetch(`http://localhost:8081/api/v1/application/withdraw/${applId}`, { method: 'PUT' })
+      .then(response => { refreshDataGrid(); });
+    }
+    closeMessageBox({
+      action: 'Success', 
+      message: 'The selected application has been successfully withdrawn!',
+    }, setMessageBox);
   }
 
   return (
@@ -120,7 +144,6 @@ export default function ApplicationsGrid() {
             rows={pageState.rows}
             rowCount={pageState.rowCount}
             loading={pageState.isLoading}
-            // pageSizeOptions={[5, 10, 20, 50]}
             paginationMode="server"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
@@ -142,27 +165,15 @@ export default function ApplicationsGrid() {
               Withdraw
             </Button>
           </Stack>
-        </Box>
-        
-        {/* <ApplicationForm applId={10} /> */}
-        
+        </Box>        
         <ConfirmationModal
-          open={deleteMsgOpen}
-          handleClose={handleDeleteMsgClose}
-          action="Delete" 
-          message="Are you sure you want to delete the selected record(s)?"
-          okAction={null}
-          yesAction={confirmDeleteApplications}
-          noAction={handleDeleteMsgClose}
-        />
-        <ConfirmationModal
-          open={successMsgOpen}
-          handleClose={handleSuccessMsgClose}
-          action="Success" 
-          message="Record(s) deleted!"
-          okAction={handleSuccessMsgClose}
-          yesAction={null}
-          noAction={null}
+          open={messageBox.open}
+          handleClose={closeMessagePrompt}
+          action={messageBox.action}
+          message={messageBox.message}
+          okAction={messageBox.okAction}
+          yesAction={messageBox.yesAction}
+          noAction={messageBox.noAction}
         />
       </Container>
     </ThemeProvider>

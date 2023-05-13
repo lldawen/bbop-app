@@ -28,7 +28,6 @@ export default function ApplicationDocumentsGrid({ applId }) {
     rows: [],
     rowCount: 0,
   });
-  // const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>([]);
   const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 5 });
   
   const [documentTypeList, setDocumentTypeList] = React.useState([]);
@@ -195,7 +194,6 @@ export default function ApplicationDocumentsGrid({ applId }) {
       editable: false,
       sortable: false,
       align: 'center',
-      // renderCell: (data) => <><GridArrowDownwardIcon sx={{ mr: 2, color: '#0063ba' }} onClick={() => downloadDocument(data.row.documentPath)} /><GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} /></>,
       renderCell: (data) => (
         <>
           <a 

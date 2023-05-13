@@ -17,9 +17,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
-import ConfirmationModal from '../common/confirmationModal';
+import ConfirmationModal, { closeMessageBox, closeMessagePrompt, showMessageBox } from '../common/confirmationModal';
 import { ThemeProvider } from '@mui/material';
 import { theme } from '@/pages';
+import { getDropdownOptions } from '../common/util';
 
 const UserForm = ({ userId }) => {
 
@@ -46,13 +47,19 @@ const UserForm = ({ userId }) => {
     });
     const router = useRouter();
 
-    const [saveMsgOpen, setSaveMsgOpen] = React.useState(false);
-    const handleSaveMsgOpen = () => setSaveMsgOpen(true);
-    const handleSaveMsgClose = () => setSaveMsgOpen(false);
+    const [genderList, setGenderList] = React.useState([]);
+    const [civilStatusList, setCivilStatusList] = React.useState([]);
+    const [streetList, setStreetList] = React.useState([]);
+    const [districtList, setDistrictList] = React.useState([]);
 
-    const [successMsgOpen, setSuccessMsgOpen] = React.useState(false);
-    const handleSuccessMsgOpen = () => setSuccessMsgOpen(true);
-    const handleSuccessMsgClose = () => setSuccessMsgOpen(false);
+    const [messageBox, setMessageBox] = React.useState({
+        open: false,
+        action: '',
+        message: '',
+        okAction: undefined as unknown,
+        yesAction: undefined as unknown,
+        noAction: undefined as unknown,
+    });
 
     function setUserState(fieldName: any, newValue: any) {
         setUser((prevState) => ({
@@ -73,8 +80,11 @@ const UserForm = ({ userId }) => {
     }
 
     React.useEffect(() => {
+        getDropdownOptions('GENDER', setGenderList);
+        getDropdownOptions('CIVIL_STATUS', setCivilStatusList);
+        getDropdownOptions('STREET', setStreetList);
+        getDropdownOptions('DISTRICT', setDistrictList);
         async function initializeUserDetails() {
-            console.log('initializeUserDetails: ', userId);
             if (userId) {
                 await fetch(`http://localhost:8081/api/v1/user/get/${userId}`, {
                     method: 'GET',
@@ -115,21 +125,17 @@ const UserForm = ({ userId }) => {
     }, []);
 
     
-    function handleSubmit(event: any) {
+    function saveUserAccount(event: any) {
         event.preventDefault();
-        handleSaveMsgOpen();
+        showMessageBox({
+            action: 'Confirmation',
+            message: 'Do you want to create this user account?',
+            yesAction: confirmSaveUserAccount,
+            noAction: () => closeMessagePrompt(setMessageBox),
+        }, setMessageBox);
     }
 
-    function confirmSave() {
-        saveUserDetails();
-    }
-
-    function redirectToDashboard() {
-        handleSuccessMsgClose();
-        router.push('/dashboard');
-    }
-
-    async function saveUserDetails() {
+    async function confirmSaveUserAccount() {
         const url = isUpdate ? `http://localhost:8081/api/v1/user/update/${userId}` : `http://localhost:8081/auth/register`;
         const result = await fetch(url, {
             method: isUpdate ? 'PUT' : 'POST',
@@ -140,7 +146,10 @@ const UserForm = ({ userId }) => {
             },
         });
         if (result.ok) {
-            handleSuccessMsgOpen();
+            closeMessageBox({
+                action: 'Success', 
+                message: 'User account has been successfully ' + (isUpdate ? 'saved!' : 'created!'),
+            }, setMessageBox, () => router.push(`/dashboard`));
         }
     }
 
@@ -167,7 +176,7 @@ const UserForm = ({ userId }) => {
                     <Typography component="h1" variant="h5">
                     { isUpdate ? 'Update' : 'Create'} User Account
                     </Typography>
-                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                    <Box component="form" onSubmit={saveUserAccount} noValidate sx={{ mt: 1 }}>
                     <TextField
                         margin="normal"
                         required
@@ -258,8 +267,9 @@ const UserForm = ({ userId }) => {
                             aria-labelledby="demo-row-radio-buttons-group-label"
                             name="gender"
                         >
-                            <FormControlLabel value="M" control={<Radio />} label="Male" onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }} />
-                            <FormControlLabel value="F" control={<Radio />} label="Female" onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }} color='#eee442' />
+                            {genderList.map((option) => (
+                                <FormControlLabel key={option.code} value={option.code} control={<Radio />} label={option.codeDescription} onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }} />
+                            ))}
                         </RadioGroup>
                     </FormControl>
 
@@ -280,8 +290,9 @@ const UserForm = ({ userId }) => {
                             onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }}
                             label="Civil Status"
                         >
-                            <MenuItem value='S'>Single</MenuItem>
-                            <MenuItem value='M'>Married</MenuItem>
+                            {civilStatusList.map((option) => (
+                                <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
+                            ))}
                         </Select>
                     </FormControl>
 
@@ -348,11 +359,9 @@ const UserForm = ({ userId }) => {
                             onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }}
                             label="District"
                         >
-                            <MenuItem value='P1'>Purok 1</MenuItem>
-                            <MenuItem value='P2'>Purok 2</MenuItem>
-                            <MenuItem value='P2'>Purok 3</MenuItem>
-                            <MenuItem value='P2'>Purok 4</MenuItem>
-                            <MenuItem value='P2'>Purok 5</MenuItem>
+                            {districtList.map((option) => (
+                                <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
+                            ))}
                         </Select>
                     </FormControl>
                     <FormControl fullWidth margin="normal">
@@ -365,10 +374,9 @@ const UserForm = ({ userId }) => {
                             onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }}
                             label="Street Name"
                         >
-                            <MenuItem value='S1'>Bagonpook Ave.</MenuItem>
-                            <MenuItem value='S1'>Lina</MenuItem>
-                            <MenuItem value='S2'>Macasaet</MenuItem>
-                            <MenuItem value='S2'>Villapando</MenuItem>
+                            {streetList.map((option) => (
+                                <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
+                            ))}
                         </Select>
                     </FormControl>
 
@@ -384,22 +392,13 @@ const UserForm = ({ userId }) => {
                 </Box>
             </Container>
             <ConfirmationModal
-                open={saveMsgOpen}
-                handleClose={handleSaveMsgClose}
-                action="Save" 
-                message="Proceed to save?"
-                okAction={null}
-                yesAction={confirmSave}
-                noAction={handleSaveMsgClose}
-            />
-            <ConfirmationModal
-                open={successMsgOpen}
-                handleClose={handleSuccessMsgClose}
-                action="Success" 
-                message="Account has been saved!"
-                okAction={redirectToDashboard}
-                yesAction={null}
-                noAction={null}
+                open={messageBox.open}
+                handleClose={() => closeMessagePrompt(setMessageBox)}
+                action={messageBox.action}
+                message={messageBox.message}
+                okAction={messageBox.okAction}
+                yesAction={messageBox.yesAction}
+                noAction={messageBox.noAction}
             />
         </ThemeProvider>
     )
