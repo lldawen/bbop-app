@@ -8,9 +8,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import ConfirmationModal, { closeMessageBox, closeMessagePrompt, showMessageBox } from '@/components/common/confirmationModal';
 import { Container, ThemeProvider, Typography } from '@mui/material';
-import { theme } from '..';
-
-const ApplIdLink = ({ applId }) => <Link style={{ textDecoration: 'underline', color: 'blue' }} href={`/dashboard/application/get/${applId}`}>{applId}</Link>;
+import { theme } from '../../';
+import CustomLink from '@/components/common/customLink';
 
 const columns: GridColDef[] = [
   {
@@ -18,7 +17,7 @@ const columns: GridColDef[] = [
     headerName: 'Application ID',
     sortable: true,
     width: 150,
-    renderCell: (data) => <ApplIdLink applId={data.id} />,
+    renderCell: (data) => <CustomLink href={`/admin/dashboard/application/${data.id}`} text={data.id} />,
   },
   {
     field: 'applTypeDescr',
@@ -42,7 +41,7 @@ const columns: GridColDef[] = [
   },
 ];
 
-export default function ApplicationsGrid() {
+export default function AdminApplicationsGrid() {
 
   const[pageState, setPageState] = React.useState({
     isLoading: false,
@@ -68,7 +67,7 @@ export default function ApplicationsGrid() {
   function refreshDataGrid() {
     async function fetchApplicationData() {
       try {
-        const response = await fetch(`http://localhost:8081/api/v1/application/all?userId=${'dawen@gmail.com'}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        const response = await fetch(`http://localhost:8081/api/v1/admin/application/all?&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({
@@ -84,56 +83,12 @@ export default function ApplicationsGrid() {
     fetchApplicationData();
   }
 
-  function submitNewApplication() {
-    router.push('/dashboard/application/create');
-  }
-
-  function deleteSelectedApplications() {
-    showMessageBox({
-      action: 'Confirmation', 
-      message: 'Do you want to delete the selected application?',
-      yesAction: confirmDeleteApplications,
-      noAction: () => closeMessagePrompt(setMessageBox),
-    }, setMessageBox);
-  }
-
-  function confirmDeleteApplications() {
-    for (const applId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/application/delete/${applId}`, { method: 'PUT' })
-      .then(response => { refreshDataGrid(); });
-    }
-    closeMessageBox({
-      action: 'Success', 
-      message: 'The selected application has been successfully deleted!',
-    }, setMessageBox);
-  }
-
-  function withdrawSelectedApplications() {
-    showMessageBox({
-      action: 'Confirmation', 
-      message: 'Do you want to withdraw the selected application?',
-      yesAction: confirmWithdrawSelectedApplications,
-      noAction: () => closeMessagePrompt(setMessageBox),
-    }, setMessageBox);
-  }
-
-  function confirmWithdrawSelectedApplications() {
-    for (const applId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/application/withdraw/${applId}`, { method: 'PUT' })
-      .then(response => { refreshDataGrid(); });
-    }
-    closeMessageBox({
-      action: 'Success', 
-      message: 'The selected application has been successfully withdrawn!',
-    }, setMessageBox);
-  }
-
   return (
     <ThemeProvider theme={theme}>
       <Header />
       <Container maxWidth="xl" disableGutters>
         <Box sx={{ width: '80%', margin: '20px auto' }}>
-          <Typography variant='h4'>My Applications</Typography>
+          <Typography variant='h4'>User Applications</Typography>
         </Box>  
         <Box sx={{ width: '80%', height: 400, margin: '20px auto' }}>
           <DataGrid
@@ -152,20 +107,7 @@ export default function ApplicationsGrid() {
             onRowSelectionModelChange={(newRowSelectionModel) => { setRowSelectionModel(newRowSelectionModel); }}
             disableRowSelectionOnClick
           />
-        </Box>
-        <Box sx={{ width: '80%', margin: '20px auto' }}>
-          <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
-            <Button variant="contained" onClick={submitNewApplication}>
-              New
-            </Button>
-            <Button variant="contained" disabled={rowSelectionModel.length == 0} onClick={deleteSelectedApplications}>
-              Delete
-            </Button>
-            <Button variant="contained" disabled={rowSelectionModel.length == 0} onClick={withdrawSelectedApplications}>
-              Withdraw
-            </Button>
-          </Stack>
-        </Box>        
+        </Box>       
         <ConfirmationModal
           open={messageBox.open}
           handleClose={closeMessagePrompt}

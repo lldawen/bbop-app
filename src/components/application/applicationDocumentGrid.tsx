@@ -9,7 +9,7 @@ import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
 import { DisabledByDefault } from '@mui/icons-material';
 
-export default function ApplicationDocumentsGrid({ applId }) {
+export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
 
   type Nullable<T> = T | null;
   
@@ -201,9 +201,9 @@ export default function ApplicationDocumentsGrid({ applId }) {
             href={`http://localhost:8081/api/v1/application/document/download/${data.row.documentPath}`}>
               <GridArrowDownwardIcon sx={{ mr: 2, color: '#0063ba' }} />
           </a>
-          <a href="javascript:void(0)">
+          {!isAdmin && (<a href="javascript:void(0)">
             <GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} />
-          </a>
+          </a>)}
         </>
       ),
     },
@@ -215,47 +215,49 @@ export default function ApplicationDocumentsGrid({ applId }) {
         <Typography component="h1" variant="h6" sx={{ margin: '20px 0 10px' }}>Supporting Documents</Typography>
       </Box>
       
-      <Box sx={{ width: '100%', margin: '20px auto' }} >
-          <FormControl sx={{ mt: 1, mr: 2, width: 250 }} size="small">
-            <InputLabel id="docType-label">Document Type</InputLabel>
-            <Select
-                labelId="docType-label"
-                id="docType-select"
-                name="documentType"
-                value={applicationDocument.documentType}
+      {!isAdmin && (
+        <Box sx={{ width: '100%', margin: '20px auto' }} >
+            <FormControl sx={{ mt: 1, mr: 2, width: 250 }} size="small">
+              <InputLabel id="docType-label">Document Type</InputLabel>
+              <Select
+                  labelId="docType-label"
+                  id="docType-select"
+                  name="documentType"
+                  value={applicationDocument.documentType}
+                  onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
+                  label="Document Type"
+              >
+              {documentTypeList.map((option) => (
+                <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
+              ))}
+              </Select>
+            </FormControl>
+            <Button sx={{ mt: 1, mr: 1, }} variant="contained" component="label">
+              { applicationDocument.documentFile == null ? 'Upload' : 'Replace' }
+              <input hidden accept="image/*" multiple type="file"
+                id="documentName"
+                name="documentName"
+                value={applicationDocument.documentName} 
                 onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
-                label="Document Type"
-            >
-            {documentTypeList.map((option) => (
-              <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
-            ))}
-            </Select>
-          </FormControl>
-          <Button sx={{ mt: 1, mr: 1, }} variant="contained" component="label">
-            { applicationDocument.documentFile == null ? 'Upload' : 'Replace' }
-            <input hidden accept="image/*" multiple type="file"
-              id="documentName"
-              name="documentName"
-              value={applicationDocument.documentName} 
-              onChange={(e) => { setFieldValue(e.target.name, e.target.value) }}
-            />
-          </Button>
-          <Button sx={{ mt: 1, mr: 1, }} variant="contained" disabled={applicationDocument.documentFile == null} type='button' onClick={saveDocument}>
-            Save
-          </Button>
-          <Box sx={{ width: '100%', margin: '20px 0' }}>
-            <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
-              <FormControl sx={{ mb: 5, width: '100%' }} size="small">
-                <InputLabel id="document-label">
-                  Please upload your supporting document e.g. ID ...
-                </InputLabel>
-              </FormControl>
-              {applicationDocument.documentName != '' && (
-                <DisabledByDefault id="removeDocBtn" onClick={removeUploadedDocument} sx={{ margin: '20px 0', color: '#942230' }} />    
-              )}
-            </Stack>
-          </Box>
-      </Box>
+              />
+            </Button>
+            <Button sx={{ mt: 1, mr: 1, }} variant="contained" disabled={applicationDocument.documentFile == null} type='button' onClick={saveDocument}>
+              Save
+            </Button>
+            <Box sx={{ width: '100%', margin: '20px 0' }}>
+              <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+                <FormControl sx={{ mb: 5, width: '100%' }} size="small">
+                  <InputLabel id="document-label">
+                    Please upload your supporting document e.g. ID ...
+                  </InputLabel>
+                </FormControl>
+                {applicationDocument.documentName != '' && (
+                  <DisabledByDefault id="removeDocBtn" onClick={removeUploadedDocument} sx={{ margin: '20px 0', color: '#942230' }} />    
+                )}
+              </Stack>
+            </Box>
+        </Box>
+      )}
 
       <Box sx={{ width: '100%', height: 400, margin: '20px auto' }}>
         <DataGrid

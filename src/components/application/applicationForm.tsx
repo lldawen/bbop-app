@@ -24,14 +24,16 @@ import ApplicationDocumentsGrid from './applicationDocumentGrid';
 import { closeMessagePrompt } from '../common/confirmationModal';
 import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
+import { Certificate } from 'crypto';
+import CertificateMenu from '../common/certificateMenu';
 
-export default function ApplicationForm({ applId }) {
+export default function ApplicationForm({ applId, isAdmin }) {
 
     const isUpdate = applId ? true : false;
 
     const [application, setApplication] = useState({
         applId: '',
-        applicantId: 'admin@gmail.com',
+        applicantId: 'dawen@gmail.com',
         applType: '',
         applTypeDescr: '',
         purpose: '',
@@ -40,7 +42,7 @@ export default function ApplicationForm({ applId }) {
         feeAmount: 0,
         feePaid: 0,
         paymentDate: '',
-        paymentMode: '',
+        paymentMode: 'OTC',
         paymentModeDescr: '',
         notifyViaEmail: false,
         certificateIssued: false,
@@ -48,10 +50,14 @@ export default function ApplicationForm({ applId }) {
         applDocuments: [],
         certificateList: [],
         consent: false,
+        status: '',
+        statusDescr: '',
+        isPaymentComplete: false,
     });
 
     const [applTypeList, setApplTypeList] = useState([]);
     const [purposeList, setPurposeList] = useState([]);
+    const [paymentModeList, setPaymentModeList] = useState([]);
 
     const router = useRouter();
 
@@ -64,6 +70,14 @@ export default function ApplicationForm({ applId }) {
         noAction: undefined as unknown,
     });
     
+    function hasPendingPayment(feeAmt, feePaid) {
+        return feeAmt == 0 || (feeAmt - feePaid <= 0);
+    }
+
+    function isReadOnly(status) {
+        return status == 'A' || status == 'R' || status == 'C' || status == 'W';
+    }
+
     function setApplicationState(fieldName: any, newValue: any) {
         console.log('setApplicationState: ', fieldName, newValue);
         setApplication((prevState) => ({
@@ -83,6 +97,7 @@ export default function ApplicationForm({ applId }) {
     React.useEffect(() => {
         getDropdownOptions('APPL_TYPE', setApplTypeList);
         getDropdownOptions('APPL_PURPOSE', setPurposeList);
+        getDropdownOptions('PAYMENT_MODE', setPaymentModeList);
         async function initializeApplicationDetails() {
             if (applId) {
                 await fetch(`http://localhost:8081/api/v1/application/get/${applId}`, {
@@ -114,6 +129,9 @@ export default function ApplicationForm({ applId }) {
                         certificateIssueDate: applData.certificateIssueDate,
                         applDocuments: applData.applDocuments,
                         certificateList: applData.certificateList,
+                        status: applData.status,
+                        statusDescr: applData.statusDescr,
+                        isPaymentComplete: hasPendingPayment(applData.feeAmount, applData.feePaid),
                     }));
                 });
             }
@@ -175,14 +193,75 @@ export default function ApplicationForm({ applId }) {
         }
     }
 
+    function savePaymentDetails() {
+        showMessageBox({
+            action: 'Confirmation',
+            message: 'Do you want to save the payment details?',
+            yesAction: confirmSavePaymentDetails,
+            noAction: () => closeMessagePrompt(setMessageBox),
+        }, setMessageBox);
+    }
+
+    async function confirmSavePaymentDetails() {
+        const response = await fetch(`http://localhost:8081/api/v1/admin/application/savePayment/${applId}`, {
+            method: 'PUT',
+            body: JSON.stringify(application),
+            headers: {
+                'Content-type': 'application/json',
+                // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+        });
+        if (response.ok) {
+            closeMessageBox({
+                action: 'Success', 
+                message: 'Payment details have been successfully saved!',
+            }, setMessageBox, updatePaymentState);
+        }
+    }
+
+    function updatePaymentState() {
+        console.log('prevState.feeAmount - prevState.feePaid', application.feeAmount - application.feePaid);
+        setApplication(prevState => ({
+            ...prevState,
+            isPaymentComplete: prevState.feeAmount == 0 || (prevState.feeAmount - prevState.feePaid <= 0)
+        }));
+    }
+
+    function approveRejectApplication(action) {
+        showMessageBox({
+            action: 'Confirmation',
+            message: `Do you want to ${action} this application?`,
+            yesAction: () => confirmApproveRejectApplication(action),
+            noAction: () => closeMessagePrompt(setMessageBox),
+        }, setMessageBox);
+    }
+
+    async function confirmApproveRejectApplication(action) {
+        const response = await fetch(`http://localhost:8081/api/v1/admin/application/${action}/${applId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-type': 'application/json',
+                // 'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+        });
+        if (response.ok) {
+            closeMessageBox({
+                action: 'Success', 
+                message: 'Application has been ' + (action == 'approve' ? 'approved' : 'rejected') + '!',
+            }, setMessageBox, () => router.push(`/admin/dashboard/application/${applId}`));
+        }
+    }
+
     function formatDateFieldValue(fieldName: any, newValue: any) {
+        let formattedDateValue = '';
         const dateFieldEl: HTMLElement | null = document.getElementsByName(fieldName)[0];
         if (dateFieldEl && newValue) {
-            dateFieldEl.value = dayjs(newValue).format('DD/MM/YYYY');
+            formattedDateValue = dayjs(newValue).format('DD/MM/YYYY HH:mm:ss');
+            dateFieldEl.value = formattedDateValue;
         }
         setApplication((prevState) => ({
             ...prevState,
-            [fieldName]: newValue
+            [fieldName]: formattedDateValue
         }));
     }
 
@@ -231,7 +310,7 @@ export default function ApplicationForm({ applId }) {
                             onChange={(e) => { setApplicationType(e.target.name, e.target.value) }}
                             label="Application Type"
                         >
-                              {applTypeList.map((option) => (
+                            {applTypeList.map((option) => (
                                 <MenuItem key={option.code} value={option.code}>{option.codeDescription}</MenuItem>    
                             ))}  
                         </Select>
@@ -285,13 +364,14 @@ export default function ApplicationForm({ applId }) {
                         <RadioGroup
                             row
                             aria-labelledby="demo-row-radio-buttons-group-label"
-                            name="paymentMode"
+                            name={application.paymentMode}
                             defaultValue="OTC"
+                            onChange={(e) => { setApplicationState(e.target.name, e.target.value) }}
                         >
-                            <FormControlLabel value="OTC" control={<Radio />} label="Over-the-Counter" />
-                            <FormControlLabel value="GC" control={<Radio />} label="GCash" disabled />
-                            <FormControlLabel value="C" control={<Radio />} label="Credit/Debit Card" disabled />
-                            <FormControlLabel control={<Button disabled type="button" variant="contained" sx={{ marginLeft: '40px' }}>Pay</Button>} label="" />
+                            {paymentModeList.map((option) => (
+                                <FormControlLabel disabled={option.code != 'OTC'} key={option.code} value={option.code} control={<Radio />} label={option.codeDescription} />
+                            ))}
+                            {!isAdmin && <FormControlLabel control={<Button disabled type="button" variant="contained" sx={{ marginLeft: '40px' }}>Pay</Button>} label="" />}
                         </RadioGroup>
                     </FormControl>
 
@@ -299,21 +379,22 @@ export default function ApplicationForm({ applId }) {
                         type="number"
                         margin="normal"
                         fullWidth
-                        disabled
+                        disabled={!isAdmin || isReadOnly(application.status)}
                         id="feePaid"
                         label="Fee Paid"
                         name="feePaid"
                         value={application.feePaid}
+                        onChange={(e) => { setApplicationState(e.target.name, e.target.value) }}
                     />
 
-                    <FormControl fullWidth margin="normal">
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DatePicker disabled format='DD/MM/YYYY' label="Payment Date" value={dayjs(application.paymentDate)} />
-                            <input type="hidden" id="paymentDate" name="paymentDate" />
-                        </LocalizationProvider>
-                    </FormControl>
+                        <FormControl fullWidth margin="normal">
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker disabled={!isAdmin || isReadOnly(application.status)} format='DD/MM/YYYY' label="Payment Date" value={dayjs(application.paymentDate)} onChange={(newValue) => { formatDateFieldValue('paymentDate', newValue); }} />
+                                <input type="hidden" id="paymentDate" name="paymentDate" />
+                            </LocalizationProvider>
+                        </FormControl>
                    
-                    {!isUpdate && (
+                    {(!isAdmin && !isUpdate) && (
                         <Box sx={{ width: '100%', margin: '20px auto' }}>
                             <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
                                 <Button variant="contained" type='submit'>
@@ -326,10 +407,24 @@ export default function ApplicationForm({ applId }) {
                         </Box>
                     )}
 
-                    {isUpdate && (
-                    <>
-                        <ApplicationDocumentsGrid applId={applId} />
+                    {isAdmin && !isReadOnly(application.status) && (
+                        <>
+                            <Box sx={{ width: '100%', margin: '20px auto' }}>
+                                <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+                                    <Button variant="contained" type='button' onClick={savePaymentDetails}>
+                                        Save Payment
+                                    </Button>
+                                </Stack>
+                            </Box>
+                        </>
+                    )}
 
+                    {(isAdmin || isUpdate) && (
+                    <ApplicationDocumentsGrid applId={applId} isAdmin={isAdmin} />
+                    )}
+
+                    {(!isAdmin && isUpdate) && (
+                    <>
                         <FormControlLabel 
                             control={
                             <Checkbox 
@@ -352,6 +447,24 @@ export default function ApplicationForm({ applId }) {
                             </Stack>
                         </Box>
                     </>
+                    )}
+                    
+                    {isAdmin &&  (
+                        <Box sx={{ width: '100%', margin: '20px auto' }}>
+                            <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+                                {application.status == 'O' && (
+                                    <>
+                                        <Button variant="contained" type='button' onClick={() => approveRejectApplication('approve')} disabled={!application.isPaymentComplete}>
+                                            Approve
+                                        </Button>
+                                        <Button variant="contained" type='button' onClick={() => approveRejectApplication('reject')}>
+                                            Reject
+                                        </Button>
+                                    </>
+                                )}
+                                {application.status == 'A' && <CertificateMenu applId={applId} />}
+                            </Stack>
+                        </Box>
                     )}
                     </Box>
                 </Box>
