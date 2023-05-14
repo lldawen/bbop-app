@@ -34,7 +34,6 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
     const [application, setApplication] = useState({
         applId: '',
-        applicantId: applicantId,
         applicantId: localStorage.getItem('userId'),
         applType: '',
         applTypeDescr: '',
