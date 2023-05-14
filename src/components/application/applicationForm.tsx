@@ -258,16 +258,11 @@ export default function ApplicationForm({ applId, isAdmin }) {
     }
 
     function formatDateFieldValue(fieldName: any, newValue: any) {
-        let formattedDateValue = '';
         const dateFieldEl: HTMLElement | null = document.getElementsByName(fieldName)[0];
         if (dateFieldEl && newValue) {
-            formattedDateValue = dayjs(newValue).format('DD/MM/YYYY HH:mm:ss');
-            dateFieldEl.value = formattedDateValue;
+            dateFieldEl.value = dayjs(newValue).format('DD/MM/YYYY');
         }
-        setApplication((prevState) => ({
-            ...prevState,
-            [fieldName]: formattedDateValue
-        }));
+        setApplication(fieldName, dateFieldEl.value);
     }
 
     function cancelApplication() {
@@ -397,7 +392,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
                                 <DatePicker 
                                     disabled={!isAdmin || isReadOnly(application.status) || application.feeAmount == 0} 
                                     format='DD/MM/YYYY' label="Payment Date" 
-                                    value={!isUpdate ? todayStartOfTheDay : dayjs(application.paymentDate)} 
+                                    value={!isUpdate ? todayStartOfTheDay : dayjs(application.paymentDate).format('DD/MM/YYYY')} 
                                     onChange={(newValue) => { formatDateFieldValue('paymentDate', newValue); }} 
                                 />
                                 <input type="hidden" id="paymentDate" name="paymentDate" />
