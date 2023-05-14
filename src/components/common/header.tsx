@@ -45,6 +45,8 @@ export default function Header({ isPublicPage = false }) {
             const json = await result.json();
             setIsLoggedIn(true);
             setProfile(json);
+            localStorage.setItem('userId', json.id);
+            localStorage.setItem('role', json.role);
             initializeUserMenu(json?.role == 'ADMIN');
         } else {
             setIsLoggedIn(false);
@@ -90,9 +92,11 @@ export default function Header({ isPublicPage = false }) {
   };
 
   function logout() {
-      localStorage.removeItem('token');
-      setIsLoggedIn(false);
-      router.push('/');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('role');
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    router.push('/');
   }
 
   return (

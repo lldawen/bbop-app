@@ -31,8 +31,9 @@ const AdminLoginPage = () => {
             });
             if (result.ok) {
                 const json = await result.json();
+                localStorage.setItem('userId', email);
+                localStorage.setItem('role', 'USER');
                 localStorage.setItem('token', json.data.token);
-                setProfile(json);
                 router.push('/admin/dashboard');
             } else {
                 router.push('/admin/login');

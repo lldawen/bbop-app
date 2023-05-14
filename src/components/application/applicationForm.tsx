@@ -33,7 +33,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
     const [application, setApplication] = useState({
         applId: '',
-        applicantId: 'dawen@gmail.com',
+        applicantId: localStorage.getItem('userId'),
         applType: '',
         applTypeDescr: '',
         purpose: '',
@@ -88,15 +88,15 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
     function setApplicationType(fieldName: any, newValue: any) {
         const isFeeRequiredVal = newValue == 'C' || newValue == 'R';
-        const feeAmountVal = newValue == 'C' ? 50.00 : (newValue == 'R' ? 100.50 : 0.00);
+        const feeAmountVal = newValue == 'C' ? 30.00 : (newValue == 'R' ? 50.00 : 0.00);
         setApplicationState(fieldName, newValue);
         setApplicationState('isFeeRequired', isFeeRequiredVal);
         setApplicationState('feeAmount', feeAmountVal);
+        getDropdownOptions(`APPL_PURPOSE_${newValue}`, setPurposeList);
     }
     
     React.useEffect(() => {
         getDropdownOptions('APPL_TYPE', setApplTypeList);
-        getDropdownOptions('APPL_PURPOSE', setPurposeList);
         getDropdownOptions('PAYMENT_MODE', setPaymentModeList);
         async function initializeApplicationDetails() {
             if (applId) {

@@ -35,8 +35,9 @@ const LoginPage = () => {
             });
             if (result.ok) {
                 const json = await result.json();
+                localStorage.setItem('userId', email);
+                localStorage.setItem('role', 'USER');
                 localStorage.setItem('token', json.data.token);
-                setProfile(json);
                 router.push('/dashboard');
             } else {
                 router.push('/login');

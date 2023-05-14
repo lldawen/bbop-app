@@ -149,7 +149,7 @@ const UserForm = ({ userId }) => {
             closeMessageBox({
                 action: 'Success', 
                 message: 'User account has been successfully ' + (isUpdate ? 'saved!' : 'created!'),
-            }, setMessageBox, () => router.push(`/dashboard`));
+            }, setMessageBox, () => router.push(`/login`));
         }
     }
 
@@ -163,7 +163,7 @@ const UserForm = ({ userId }) => {
 
     return (
         <ThemeProvider theme={theme}>
-            <Header />
+            <Header isPublicPage={!isUpdate} />
             <Container component="main" maxWidth="xs">
                 <Box sx={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "center", }}>
                     <Typography component="h1" variant="h4">
@@ -329,7 +329,7 @@ const UserForm = ({ userId }) => {
                         id="email"
                         label="Email"
                         name="email"
-                        value={user.userDetail.email}
+                        value={user.userDetail.email ? user.userDetail.email : user.id}
                         onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }}
                         autoComplete="email"
                         autoFocus
