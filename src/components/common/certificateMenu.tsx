@@ -28,7 +28,7 @@ export default function CertificateMenu({ applId }) {
 
   function conveyAndCloseApplication() {
     async function apply() {
-      const response = await fetch(`http://localhost:8081/api/v1/admin/application/conveyAndClose/${applId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/admin/application/conveyAndClose/${applId}`, {
         method: 'PUT',
         headers: {
             'Content-type': 'application/json',
@@ -68,7 +68,7 @@ export default function CertificateMenu({ applId }) {
       >
           <a 
             target="_blank" rel="noopener noreferrer"
-            href={`http://localhost:8081/api/v1/admin/application/document/download/${applId}`}
+            href={`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/admin/application/document/download/${applId}`}
           >
             <MenuItem>Download</MenuItem>
           </a>

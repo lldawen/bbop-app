@@ -24,7 +24,6 @@ import ApplicationDocumentsGrid from './applicationDocumentGrid';
 import { closeMessagePrompt } from '../common/confirmationModal';
 import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
-import { Certificate } from 'crypto';
 import CertificateMenu from '../common/certificateMenu';
 
 export default function ApplicationForm({ applId, isAdmin }) {
@@ -34,7 +33,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
     const [application, setApplication] = useState({
         applId: '',
-        applicantId: localStorage.getItem('userId'),
+        applicantId: applicantId,
         applType: '',
         applTypeDescr: '',
         purpose: '',
@@ -104,7 +103,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
         getDropdownOptions('PAYMENT_MODE', setPaymentModeList);
         async function initializeApplicationDetails() {
             if (applId) {
-                await fetch(`http://localhost:8081/api/v1/application/get/${applId}`, {
+                await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/get/${applId}`, {
                     method: 'GET',
                     headers: {
                         'Content-type': 'application/json',
@@ -156,7 +155,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
     }
 
     async function saveApplicationDetails() {
-        const response = await fetch(`http://localhost:8081/api/v1/application/create`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/create`, {
             method: 'POST',
             body: JSON.stringify(application),
             headers: {
@@ -183,7 +182,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
     }
 
     async function confirmSubmitApplication() {
-        const response = await fetch(`http://localhost:8081/api/v1/application/submit/${applId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/submit/${applId}`, {
             method: 'PUT',
             headers: {
                 'Content-type': 'application/json',
@@ -208,7 +207,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
     }
 
     async function confirmSavePaymentDetails() {
-        const response = await fetch(`http://localhost:8081/api/v1/admin/application/savePayment/${applId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/admin/application/savePayment/${applId}`, {
             method: 'PUT',
             body: JSON.stringify(application),
             headers: {
@@ -242,7 +241,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
     }
 
     async function confirmApproveRejectApplication(action) {
-        const response = await fetch(`http://localhost:8081/api/v1/admin/application/${action}/${applId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/admin/application/${action}/${applId}`, {
             method: 'PUT',
             headers: {
                 'Content-type': 'application/json',

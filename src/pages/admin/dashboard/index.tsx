@@ -67,7 +67,7 @@ export default function AdminApplicationsGrid() {
   function refreshDataGrid() {
     async function fetchApplicationData() {
       try {
-        const response = await fetch(`http://localhost:8081/api/v1/admin/application/all?&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/admin/application/all?&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({

@@ -68,7 +68,7 @@ export default function ApplicationsGrid() {
     async function fetchApplicationData() {
       try {
         console.log('localStorage, ', localStorage);
-        const response = await fetch(`http://localhost:8081/api/v1/application/all?userId=${localStorage.getItem('userId')}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/all?userId=${localStorage.getItem('userId')}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({
@@ -99,7 +99,7 @@ export default function ApplicationsGrid() {
 
   function confirmDeleteApplications() {
     for (const applId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/application/delete/${applId}`, { method: 'PUT' })
+      fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/delete/${applId}`, { method: 'PUT' })
       .then(response => { refreshDataGrid(); });
     }
     closeMessageBox({
@@ -119,7 +119,7 @@ export default function ApplicationsGrid() {
 
   function confirmWithdrawSelectedApplications() {
     for (const applId of rowSelectionModel) {
-      fetch(`http://localhost:8081/api/v1/application/withdraw/${applId}`, { method: 'PUT' })
+      fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/withdraw/${applId}`, { method: 'PUT' })
       .then(response => { refreshDataGrid(); });
     }
     closeMessageBox({

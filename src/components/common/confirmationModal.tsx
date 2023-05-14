@@ -18,20 +18,18 @@ const style = {
 };
 
 export function showMessageBox(props: any, setMessageBox: Function) {
-  console.log('showMessageBox');
   setMessageBox(prevState => ({
     ...prevState,
     open: true,
     action: props.action,
     message: props.message,
     okAction: props.okAction,
-    yesAction: () => { props.yesAction(); closeMessagePrompt(setMessageBox); },
+    yesAction: props.yesAction,
     noAction: props.noAction,
   }));
 }
 
 export function closeMessageBox(props, setMessageBox: Function, callbackFn?: Function | undefined) {
-  console.log('closeMessageBox');
   closeMessagePrompt(setMessageBox);
   setTimeout(() => {
     showMessageBox({
@@ -50,7 +48,6 @@ export function closeMessageBox(props, setMessageBox: Function, callbackFn?: Fun
 }
 
 export function closeMessagePrompt(setMessageBox: Function) {
-  console.log('closeMessagePrompt', setMessageBox);
   setMessageBox(prevState => ({
     ...prevState,
     open: false,
@@ -94,7 +91,11 @@ export default function ConfirmationModal({ open, handleClose, action, message, 
               )
             }
             { yesAction && (
-                <Button variant="contained" onClick={yesAction}>
+                <Button variant="contained" 
+                  onClick={() => {
+                    noAction();
+                    yesAction(); 
+                  }}>
                   Yes
                 </Button>
               )

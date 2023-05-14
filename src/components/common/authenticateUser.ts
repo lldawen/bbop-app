@@ -4,7 +4,7 @@ const router = useRouter();
 
 export async function authenticate(email: any, password: any, setProfile: Function) {
     try {
-        const result = await fetch("http://localhost:8081/auth/authenticate", {
+        const result = await fetch("${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/auth/authenticate", {
             method: 'POST',
             body: JSON.stringify({ 'username': email, 'password': password }),
             headers: {

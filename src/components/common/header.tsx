@@ -34,7 +34,7 @@ export default function Header({ isPublicPage = false }) {
 
   async function checkProfile() {
     try {
-        const result = await fetch("http://localhost:8081/auth/checkProfile", {
+        const result = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/auth/checkProfile`, {
             method: 'GET',
             headers: {
                 'Content-type': 'application/json',

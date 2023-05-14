@@ -49,7 +49,7 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
   function refreshDataGrid() {
     async function fetchApplicationDocData() {
       try {
-        const response = await fetch(`http://localhost:8081/api/v1/application/document/all?applId=${applId}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/document/all?applId=${applId}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({
@@ -86,7 +86,7 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
     formData.append('documentType', applicationDocument.documentType);
     formData.append('documentName', applicationDocument.documentName);
     formData.append('documentFile', applicationDocument.documentFile);
-    const result = await fetch(`http://localhost:8081/api/v1/application/document/create`, {
+    const result = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/document/create`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -117,7 +117,7 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
   }
 
   function confirmDeleteDocument(documentId) {
-    fetch(`http://localhost:8081/api/v1/application/document/delete/${documentId}`, { method: 'DELETE' })
+    fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/document/delete/${documentId}`, { method: 'DELETE' })
     .then(response => { refreshDataGrid(); });
 
     closeMessageBox({
@@ -198,7 +198,7 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
         <>
           <a 
             target="_blank" rel="noopener noreferrer"
-            href={`http://localhost:8081/api/v1/application/document/download/${data.row.documentPath}`}>
+            href={`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/document/download/${data.row.documentPath}`}>
               <GridArrowDownwardIcon sx={{ mr: 2, color: '#0063ba' }} />
           </a>
           {!isAdmin && (<a href="javascript:void(0)">

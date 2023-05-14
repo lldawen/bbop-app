@@ -83,7 +83,7 @@ export default function UsersGrid() {
 
   function refreshDataGrid() {
     async function fetchUserData() {
-      const response = await fetch(`http://localhost:8081/api/v1/user/all?size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/user/all?size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
       const json = await response.json();
       setPageState((prevState) => ({
         ...prevState,
@@ -100,7 +100,7 @@ export default function UsersGrid() {
 
   function toggleActiveStatus(userId, isActive) {
     const action = isActive == 'Yes' ? 'deactivate' : 'activate';
-    fetch(`http://localhost:8081/api/v1/user/${action}/${userId}`, { method: 'PUT' })
+    fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/user/${action}/${userId}`, { method: 'PUT' })
     .then(response => { 
       closeMessageBox({
         action: 'Success', 
@@ -112,7 +112,7 @@ export default function UsersGrid() {
   function toggleRole(userId, role) {
     const isUser = role == 'USER';
     const action = isUser ? 'setAsAdmin' : 'setAsUser';
-    fetch(`http://localhost:8081/api/v1/user/${action}/${userId}`, { method: 'PUT' })
+    fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/user/${action}/${userId}`, { method: 'PUT' })
     .then(response => { 
       closeMessageBox({
         action: 'Success', 

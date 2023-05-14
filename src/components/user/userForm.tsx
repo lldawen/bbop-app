@@ -86,7 +86,7 @@ const UserForm = ({ userId }) => {
         getDropdownOptions('DISTRICT', setDistrictList);
         async function initializeUserDetails() {
             if (userId) {
-                await fetch(`http://localhost:8081/api/v1/user/get/${userId}`, {
+                await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/user/get/${userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-type': 'application/json',
@@ -136,7 +136,9 @@ const UserForm = ({ userId }) => {
     }
 
     async function confirmSaveUserAccount() {
-        const url = isUpdate ? `http://localhost:8081/api/v1/user/update/${userId}` : `http://localhost:8081/auth/register`;
+        const url = isUpdate 
+            ? `${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/user/update/${userId}` 
+            : `${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/auth/register`;
         const result = await fetch(url, {
             method: isUpdate ? 'PUT' : 'POST',
             body: JSON.stringify(user),
