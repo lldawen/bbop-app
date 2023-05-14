@@ -35,8 +35,9 @@ const LoginPage = () => {
             });
             if (result.ok) {
                 const json = await result.json();
+                localStorage.setItem('userId', email);
+                localStorage.setItem('role', 'USER');
                 localStorage.setItem('token', json.data.token);
-                setProfile(json);
                 router.push('/dashboard');
             } else {
                 router.push('/login');
@@ -92,9 +93,9 @@ const LoginPage = () => {
                     </Button>
                     <Grid container>
                         <Grid item xs>
-                        <Link href="#" variant="body2">
+                        {/* <Link href="#" variant="body2">
                             Forgot password?
-                        </Link>
+                        </Link> */}
                         </Grid>
                         <Grid item>
                         <Link href="/user/create" variant="body2">

@@ -20,7 +20,7 @@ import { useRouter } from 'next/router';
 import ConfirmationModal, { closeMessageBox, closeMessagePrompt, showMessageBox } from '../common/confirmationModal';
 import { ThemeProvider } from '@mui/material';
 import { theme } from '@/pages';
-import { getDropdownOptions } from '../common/util';
+import { appendAdminUrl, getDropdownOptions } from '../common/util';
 
 const UserForm = ({ userId }) => {
 
@@ -149,7 +149,15 @@ const UserForm = ({ userId }) => {
             closeMessageBox({
                 action: 'Success', 
                 message: 'User account has been successfully ' + (isUpdate ? 'saved!' : 'created!'),
-            }, setMessageBox, () => router.push(`/dashboard`));
+            }, setMessageBox, redirectPageAfterSave);
+        }
+    }
+
+    function redirectPageAfterSave() {
+        if (isUpdate) {
+            router.push(appendAdminUrl(localStorage.getItem('role') == 'ADMIN') + `/dashboard`);
+        } else {
+            router.push(`/login`);
         }
     }
 
@@ -163,7 +171,7 @@ const UserForm = ({ userId }) => {
 
     return (
         <ThemeProvider theme={theme}>
-            <Header />
+            <Header isPublicPage={!isUpdate} />
             <Container component="main" maxWidth="xs">
                 <Box sx={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "center", }}>
                     <Typography component="h1" variant="h4">
@@ -190,6 +198,7 @@ const UserForm = ({ userId }) => {
                         value={user.id}
                         onChange={(e) => { setUserState(e.target.name, e.target.value) }}
                         autoFocus
+                        disabled={isUpdate}
                     />
 
                     { !isUpdate && (
@@ -277,7 +286,13 @@ const UserForm = ({ userId }) => {
 
                     <FormControl fullWidth margin="normal">
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DatePicker format='DD/MM/YYYY' label="Date of Birth" value={dayjs(user.userDetail.birthDate)} onChange={(newValue) => { setDateOfBirth(newValue); }} />
+                            <DatePicker 
+                                format='DD/MM/YYYY' 
+                                label="Date of Birth" 
+                                value={dayjs(user.userDetail.birthDate)} 
+                                onChange={(newValue) => { setDateOfBirth(newValue); }} 
+                                disableFuture
+                            />
                             <input type="hidden" id="birthDate" name="birthDate" />
                         </LocalizationProvider>
                     </FormControl>
@@ -329,7 +344,7 @@ const UserForm = ({ userId }) => {
                         id="email"
                         label="Email"
                         name="email"
-                        value={user.userDetail.email}
+                        value={user.userDetail.email ? user.userDetail.email : user.id}
                         onChange={(e) => { setUserDetailState(e.target.name, e.target.value) }}
                         autoComplete="email"
                         autoFocus

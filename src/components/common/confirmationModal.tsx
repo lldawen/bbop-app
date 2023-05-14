@@ -25,7 +25,7 @@ export function showMessageBox(props: any, setMessageBox: Function) {
     action: props.action,
     message: props.message,
     okAction: props.okAction,
-    yesAction: props.yesAction,
+    yesAction: () => { props.yesAction(); closeMessagePrompt(setMessageBox); },
     noAction: props.noAction,
   }));
 }
@@ -37,6 +37,8 @@ export function closeMessageBox(props, setMessageBox: Function, callbackFn?: Fun
     showMessageBox({
       action: props.action, 
       message: props.message,
+      yesAction: undefined,
+      noAction: undefined,
       okAction: () => {
         closeMessagePrompt(setMessageBox);
         if (typeof callbackFn === 'function') {

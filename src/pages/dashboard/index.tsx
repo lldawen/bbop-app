@@ -67,7 +67,8 @@ export default function ApplicationsGrid() {
   function refreshDataGrid() {
     async function fetchApplicationData() {
       try {
-        const response = await fetch(`http://localhost:8081/api/v1/application/all?userId=${'dawen@gmail.com'}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
+        console.log('localStorage, ', localStorage);
+        const response = await fetch(`http://localhost:8081/api/v1/application/all?userId=${localStorage.getItem('userId')}&size=${paginationModel.page}&limit=${paginationModel.pageSize}`);
         if (response.ok) {
           const json = await response.json();
           setPageState((prevState) => ({

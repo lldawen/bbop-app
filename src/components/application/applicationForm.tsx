@@ -30,10 +30,11 @@ import CertificateMenu from '../common/certificateMenu';
 export default function ApplicationForm({ applId, isAdmin }) {
 
     const isUpdate = applId ? true : false;
+    const applicantId = localStorage.getItem('userId');
 
     const [application, setApplication] = useState({
         applId: '',
-        applicantId: 'dawen@gmail.com',
+        applicantId: applicantId,
         applType: '',
         applTypeDescr: '',
         purpose: '',
@@ -58,6 +59,9 @@ export default function ApplicationForm({ applId, isAdmin }) {
     const [applTypeList, setApplTypeList] = useState([]);
     const [purposeList, setPurposeList] = useState([]);
     const [paymentModeList, setPaymentModeList] = useState([]);
+
+    const today = dayjs();
+    const todayStartOfTheDay = today.startOf('day');
 
     const router = useRouter();
 
@@ -88,15 +92,15 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
     function setApplicationType(fieldName: any, newValue: any) {
         const isFeeRequiredVal = newValue == 'C' || newValue == 'R';
-        const feeAmountVal = newValue == 'C' ? 50.00 : (newValue == 'R' ? 100.50 : 0.00);
+        const feeAmountVal = newValue == 'C' ? 30.00 : (newValue == 'R' ? 50.00 : 0.00);
         setApplicationState(fieldName, newValue);
         setApplicationState('isFeeRequired', isFeeRequiredVal);
         setApplicationState('feeAmount', feeAmountVal);
+        getDropdownOptions(`APPL_PURPOSE_${newValue}`, setPurposeList);
     }
     
     React.useEffect(() => {
         getDropdownOptions('APPL_TYPE', setApplTypeList);
-        getDropdownOptions('APPL_PURPOSE', setPurposeList);
         getDropdownOptions('PAYMENT_MODE', setPaymentModeList);
         async function initializeApplicationDetails() {
             if (applId) {
@@ -111,6 +115,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
                 .then(response => {
                     const applData = response.data;
                     console.log('applData:' , applData);
+                    getDropdownOptions(`APPL_PURPOSE_${applData.applType}`, setPurposeList);
                     setApplication((prevState) => ({
                         ...prevState,
                         applId: applData.id,
@@ -248,7 +253,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
             closeMessageBox({
                 action: 'Success', 
                 message: 'Application has been ' + (action == 'approve' ? 'approved' : 'rejected') + '!',
-            }, setMessageBox, () => router.push(`/admin/dashboard/application/${applId}`));
+            }, setMessageBox, () => router.reload(`/admin/dashboard/application/${applId}`));
         }
     }
 
@@ -379,7 +384,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
                         type="number"
                         margin="normal"
                         fullWidth
-                        disabled={!isAdmin || isReadOnly(application.status)}
+                        disabled={!isAdmin || isReadOnly(application.status) || application.feeAmount == 0}
                         id="feePaid"
                         label="Fee Paid"
                         name="feePaid"
@@ -389,7 +394,12 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
                         <FormControl fullWidth margin="normal">
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker disabled={!isAdmin || isReadOnly(application.status)} format='DD/MM/YYYY' label="Payment Date" value={dayjs(application.paymentDate)} onChange={(newValue) => { formatDateFieldValue('paymentDate', newValue); }} />
+                                <DatePicker 
+                                    disabled={!isAdmin || isReadOnly(application.status) || application.feeAmount == 0} 
+                                    format='DD/MM/YYYY' label="Payment Date" 
+                                    value={!isUpdate ? todayStartOfTheDay : dayjs(application.paymentDate)} 
+                                    onChange={(newValue) => { formatDateFieldValue('paymentDate', newValue); }} 
+                                />
                                 <input type="hidden" id="paymentDate" name="paymentDate" />
                             </LocalizationProvider>
                         </FormControl>
@@ -407,7 +417,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
                         </Box>
                     )}
 
-                    {isAdmin && !isReadOnly(application.status) && (
+                    {isAdmin && !isReadOnly(application.status) && application.feeAmount > 0 && (
                         <>
                             <Box sx={{ width: '100%', margin: '20px auto' }}>
                                 <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
@@ -425,7 +435,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
 
                     {(!isAdmin && isUpdate) && (
                     <>
-                        <FormControlLabel 
+                        <FormControlLabel sx={{ mt: 2, mb: 2 }}
                             control={
                             <Checkbox 
                                 id="consent" 
@@ -433,7 +443,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
                                 checked={application.consent}
                                 onChange={(e) => { setApplicationState(e.target.name, e.target.checked) }}
                             />}
-                            label="I hereby blah blah blah blah blah blah blah ....." 
+                            label="I hereby confirm that the information provided in this application is true and accurate to the best of my knowledge. I understand that any false or misleading information may result in the rejection of my application or the revocation of the certificate granted." 
                         />
 
                         <Box sx={{ width: '100%', margin: '20px auto' }}>
