@@ -138,13 +138,13 @@ export default function UsersGrid() {
           onPaginationModelChange={setPaginationModel}
         />
       </Box>
-      <Box sx={{ width: '80%', height: 400, margin: '20px auto' }}>
+      {/* <Box sx={{ width: '80%', height: 400, margin: '20px auto' }}>
         <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
           <Button variant="contained" onClick={goToSignupPage}>
             Add
           </Button>
         </Stack>
-      </Box>
+      </Box> */}
       <ConfirmationModal
         open={messageBox.open}
         handleClose={closeMessagePrompt}
