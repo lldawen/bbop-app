@@ -96,7 +96,7 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
     });
     if (result.ok) {
         closeMessageBox({
-          action: 'Save', 
+          action: 'Success', 
           message: 'Document has been saved!',
         }, setMessageBox, refreshComponents);
     }

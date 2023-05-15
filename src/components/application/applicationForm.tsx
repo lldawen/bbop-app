@@ -1,4 +1,4 @@
-import Header from '@/components/common/header';
+import Header, { getProfile } from '@/components/common/header';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -26,14 +26,15 @@ import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
 import CertificateMenu from '../common/certificateMenu';
 
-export default function ApplicationForm({ applId, isAdmin }) {
+export default function ApplicationForm({ applId }) {
 
+    const userProfile = getProfile();
+    const isAdmin = userProfile && userProfile.role == 'ADMIN';
     const isUpdate = applId ? true : false;
-    const applicantId = localStorage.getItem('userId');
 
     const [application, setApplication] = useState({
         applId: '',
-        applicantId: applicantId,
+        applicantId: !isUpdate && (userProfile.id),
         applType: '',
         applTypeDescr: '',
         purpose: '',
@@ -101,6 +102,10 @@ export default function ApplicationForm({ applId, isAdmin }) {
     React.useEffect(() => {
         getDropdownOptions('APPL_TYPE', setApplTypeList);
         getDropdownOptions('PAYMENT_MODE', setPaymentModeList);
+        initApplicationDetails();
+    }, []);
+
+    function initApplicationDetails() {
         async function initializeApplicationDetails() {
             if (applId) {
                 await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/get/${applId}`, {
@@ -118,6 +123,7 @@ export default function ApplicationForm({ applId, isAdmin }) {
                     setApplication((prevState) => ({
                         ...prevState,
                         applId: applData.id,
+                        applicantId: applData.applicantId,
                         applType: applData.applType,
                         applTypeDescr: applData.applTypeDescr,
                         purpose: applData.purpose,
@@ -141,9 +147,8 @@ export default function ApplicationForm({ applId, isAdmin }) {
             }
         }
         initializeApplicationDetails();
-    }, []);
+    }
 
-    
     function saveApplication(event: any) {
         event.preventDefault();
         showMessageBox({
@@ -252,7 +257,11 @@ export default function ApplicationForm({ applId, isAdmin }) {
             closeMessageBox({
                 action: 'Success', 
                 message: 'Application has been ' + (action == 'approve' ? 'approved' : 'rejected') + '!',
-            }, setMessageBox, () => router.reload(`/admin/dashboard/application/${applId}`));
+            }, setMessageBox, () => {
+                console.log('asdasdasd');
+                setApplicationState('status', 'A');
+                // router.push(`/admin/dashboard/application/${applId}`)
+            });
         }
     }
 

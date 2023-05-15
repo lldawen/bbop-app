@@ -12,6 +12,13 @@ import MenuItem from '@mui/material/MenuItem';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { appendAdminUrl } from './util';
+import { Stack } from '@mui/material';
+
+let userProfile = {};
+
+export function getProfile() {
+  return userProfile;
+}
 
 export default function Header({ isPublicPage = false }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
@@ -25,11 +32,9 @@ export default function Header({ isPublicPage = false }) {
   const adminMenuList = ['My Dashboard', 'Manage Users', 'Profile', 'Logout'];
 
   React.useEffect(() => {
-    console.log('profile,', profile);
     if (!isPublicPage) {
       checkProfile();
     }
-    console.log('header ISADMIN ', isAdmin);
   }, []);
 
   async function checkProfile() {
@@ -45,6 +50,8 @@ export default function Header({ isPublicPage = false }) {
             const json = await result.json();
             setIsLoggedIn(true);
             setProfile(json);
+            userProfile = json;
+            console.log(userProfile);
             localStorage.setItem('userId', json.id);
             localStorage.setItem('role', json.role);
             setIsAdmin(json.role == 'ADMIN');
@@ -120,10 +127,11 @@ export default function Header({ isPublicPage = false }) {
               </Button>
               )}
               {isLoggedIn && (
-                <>
+                <Stack direction="row" spacing={2} justifyContent={'flex-end'}>
+                  <Typography variant='h6' sx={{ fontSize: '1em', mt: 2, mr: 0 }}>Welcome, {profile.userDetail.firstName}!</Typography>
                   <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                     <Avatar>
-                      <Image alt="Menu" width={150} height={45} src="/images/profile-picture.jpg" />
+                      <Image alt="Menu" width={150} height={45} src="/images/default-avatar.png" />
                     </Avatar>
                   </IconButton>
                   <Menu
@@ -148,7 +156,7 @@ export default function Header({ isPublicPage = false }) {
                       </MenuItem>
                     ))}
                   </Menu>
-                </>
+                </Stack>
               )}
           </Box>
         </Toolbar>
