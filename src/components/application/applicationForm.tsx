@@ -25,13 +25,14 @@ import { closeMessagePrompt } from '../common/confirmationModal';
 import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
 import CertificateMenu from '../common/certificateMenu';
+import ApplicantForm from './applicantForm';
 
 export default function ApplicationForm({ applId }) {
 
     const userProfile = getProfile();
     const isAdmin = userProfile && userProfile.role == 'ADMIN';
     const isUpdate = applId ? true : false;
-
+    const [isActive, setIsActive] = React.useState(false);
     const [application, setApplication] = useState({
         applId: '',
         applicantId: !isUpdate && (userProfile.id),
@@ -53,6 +54,7 @@ export default function ApplicationForm({ applId }) {
         consent: false,
         status: '',
         statusDescr: '',
+        applicant: {},
         isPaymentComplete: false,
     });
 
@@ -141,8 +143,10 @@ export default function ApplicationForm({ applId }) {
                         certificateList: applData.certificateList,
                         status: applData.status,
                         statusDescr: applData.statusDescr,
+                        applicant: applData.applicant,
                         isPaymentComplete: hasPendingPayment(applData.feeAmount, applData.feePaid),
                     }));
+                    setIsActive(applData.status == 'O');
                 });
             }
         }
@@ -288,6 +292,15 @@ export default function ApplicationForm({ applId }) {
                         flexDirection: "column",
                     }}
                 >
+                    {isAdmin && (
+                        <>
+                            <Typography component="h1" variant="h4" sx={{ margin: '20px 0 10px' }}>
+                                Applicant Details
+                            </Typography>
+                            <ApplicantForm applicant={application.applicant} />
+                        </>
+                    )}
+
                     <Typography component="h1" variant="h4" sx={{ margin: '20px 0 10px' }}>
                         { isUpdate ? 'Application Details' : 'Submit New Application'}
                     </Typography>
@@ -433,10 +446,10 @@ export default function ApplicationForm({ applId }) {
                     )}
 
                     {(isAdmin || isUpdate) && (
-                    <ApplicationDocumentsGrid applId={applId} isAdmin={isAdmin} />
+                        <ApplicationDocumentsGrid applId={applId} isAdmin={isAdmin} isActive={isActive} />
                     )}
 
-                    {(!isAdmin && isUpdate) && (
+                    {(!isAdmin && isActive && isUpdate) && (
                     <>
                         <FormControlLabel sx={{ mt: 2, mb: 2 }}
                             control={

@@ -16,7 +16,7 @@ const columns: GridColDef[] = [
     field: 'id',
     headerName: 'Application ID',
     sortable: true,
-    width: 150,
+    width: 120,
     renderCell: (data) => <CustomLink href={`/dashboard/application/get/${data.id}`} text={data.id} />
   },
   {
@@ -28,16 +28,20 @@ const columns: GridColDef[] = [
   {
     field: 'purposeDescr',
     headerName: 'Purpose',
-    // type: 'number',
-    width: 300,
+    width: 180,
     editable: false,
   },
   {
     field: 'statusDescr',
     headerName: 'Status',
-    // type: 'number',
-    width: 130,
+    width: 180,
     editable: false,
+    renderCell: (data) => {
+      if (data.row.status == 'C') {
+        return <CustomLink href={`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/download/certificate/${data.id}`} text="Download Certificate" />;
+      }
+      return data.row.statusDescr;
+    }
   },
 ];
 

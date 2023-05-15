@@ -9,7 +9,7 @@ import { closeMessageBox } from '../common/confirmationModal';
 import { getDropdownOptions } from '../common/util';
 import { DisabledByDefault } from '@mui/icons-material';
 
-export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
+export default function ApplicationDocumentsGrid({ applId, isAdmin, isActive }) {
 
   type Nullable<T> = T | null;
   
@@ -215,7 +215,7 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin }) {
         <Typography component="h1" variant="h6" sx={{ margin: '20px 0 10px' }}>Supporting Documents</Typography>
       </Box>
       
-      {!isAdmin && (
+      {!isAdmin && isActive && (
         <Box sx={{ width: '100%', margin: '20px auto' }} >
             <FormControl sx={{ mt: 1, mr: 2, width: 250 }} size="small">
               <InputLabel id="docType-label">Document Type</InputLabel>
