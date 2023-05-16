@@ -192,6 +192,7 @@ const UserForm = ({ userId }) => {
                     <TextField
                         margin="normal"
                         required
+                        type='email'
                         fullWidth
                         id="username"
                         label="Username / Email"
@@ -240,6 +241,7 @@ const UserForm = ({ userId }) => {
                     <TextField
                         margin="normal"
                         required
+                        type='text'
                         fullWidth
                         id="firstName"
                         label="First Name"
@@ -252,6 +254,7 @@ const UserForm = ({ userId }) => {
                      <TextField
                         margin="normal"
                         required
+                        type='text'
                         fullWidth
                         id="middleName"
                         label="Middle Name"
@@ -264,6 +267,7 @@ const UserForm = ({ userId }) => {
                      <TextField
                         margin="normal"
                         required
+                        type='text'
                         fullWidth
                         id="lastName"
                         label="Last Name"
@@ -342,6 +346,7 @@ const UserForm = ({ userId }) => {
                     <TextField
                         margin="normal"
                         required
+                        type='email'
                         fullWidth
                         id="email"
                         label="Email"
