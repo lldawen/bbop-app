@@ -146,7 +146,7 @@ export default function ApplicationForm({ applId }) {
                         applicant: applData.applicant,
                         isPaymentComplete: hasPendingPayment(applData.feeAmount, applData.feePaid),
                     }));
-                    setIsActive(applData.status == 'O');
+                    setIsActive(applData.status == 'O' || applData.status == 'D');
                 });
             }
         }
@@ -413,7 +413,8 @@ export default function ApplicationForm({ applId }) {
                                 <DatePicker 
                                     disabled={!isAdmin || isReadOnly(application.status) || application.feeAmount == 0} 
                                     format='DD/MM/YYYY' label="Payment Date" 
-                                    value={!isUpdate ? todayStartOfTheDay : dayjs(application.paymentDate).format('DD/MM/YYYY')} 
+                                    value={dayjs(application.paymentDate).format('DD/MM/YYYY')}
+                                    defaultValue={todayStartOfTheDay.format('DD/MM/YYYY')}
                                     onChange={(newValue) => { formatDateFieldValue('paymentDate', newValue); }} 
                                 />
                                 <input type="hidden" id="paymentDate" name="paymentDate" />

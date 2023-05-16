@@ -12,11 +12,21 @@ import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { theme } from '..';
+import ConfirmationModal, { showMessageBox } from '@/components/common/confirmationModal';
+import { closeMessagePrompt } from '@/components/common/confirmationModal';
 
 const LoginPage = () => {
 
     const [profile, setProfile] = useState();
     const router = useRouter();
+    const [messageBox, setMessageBox] = React.useState({
+        open: false,
+        action: '',
+        message: '',
+        okAction: undefined as unknown,
+        yesAction: undefined as unknown,
+        noAction: undefined as unknown,
+    });
 
     function handleSubmit(event: any) {
         event.preventDefault();
@@ -25,6 +35,7 @@ const LoginPage = () => {
     };
 
     async function authenticate(email: any, password: any) {
+        let loginFailed = false;
         try {
             const result = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/auth/authenticate`, {
                 method: 'POST',
@@ -40,10 +51,17 @@ const LoginPage = () => {
                 localStorage.setItem('token', json.data.token);
                 router.push('/dashboard');
             } else {
-                router.push('/login');
+                loginFailed = true;
             }
         } catch(exception) {
-            alert('Invalid username and/or password.');
+            loginFailed = true;
+        }
+        if (loginFailed) {
+            showMessageBox({
+                action: 'Login Failed',
+                message: 'Failed to login. Please check your username/password.',
+                okAction: () => closeMessagePrompt(setMessageBox),
+            }, setMessageBox);
         }
     }
 
@@ -93,9 +111,9 @@ const LoginPage = () => {
                     </Button>
                     <Grid container>
                         <Grid item xs>
-                        {/* <Link href="#" variant="body2">
-                            Forgot password?
-                        </Link> */}
+                        <Link href="/admin/login" variant="body2">
+                            Administrator Login
+                        </Link>
                         </Grid>
                         <Grid item>
                         <Link href="/user/create" variant="body2">
@@ -106,6 +124,15 @@ const LoginPage = () => {
                     </Box>
                 </Box>
             </Container>
+            <ConfirmationModal
+                open={messageBox.open}
+                handleClose={closeMessagePrompt}
+                action={messageBox.action}
+                message={messageBox.message}
+                okAction={messageBox.okAction}
+                yesAction={messageBox.yesAction}
+                noAction={messageBox.noAction}
+            />
         </ThemeProvider>
     )
 }

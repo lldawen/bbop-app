@@ -8,11 +8,20 @@ import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/router';
 import React, { useState } from 'react';
 import { theme } from '../../';
+import ConfirmationModal, { closeMessagePrompt, showMessageBox } from '@/components/common/confirmationModal';
 
 const AdminLoginPage = () => {
 
     const [profile, setProfile] = useState();
     const router = useRouter();
+    const [messageBox, setMessageBox] = React.useState({
+        open: false,
+        action: '',
+        message: '',
+        okAction: undefined as unknown,
+        yesAction: undefined as unknown,
+        noAction: undefined as unknown,
+    });
 
     function handleSubmit(event: any) {
         event.preventDefault();
@@ -21,6 +30,7 @@ const AdminLoginPage = () => {
     }
 
     async function authenticate(email: any, password: any) {
+        let loginFailed = false;
         try {
             const result = await fetch(`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/auth/admin/authenticate`, {
                 method: 'POST',
@@ -36,10 +46,17 @@ const AdminLoginPage = () => {
                 localStorage.setItem('token', json.data.token);
                 router.push('/admin/dashboard');
             } else {
-                router.push('/admin/login');
+                loginFailed = true;
             }
         } catch(exception) {
-            alert('Invalid username and/or password.');
+            loginFailed = true;
+        }
+        if (loginFailed) {
+            showMessageBox({
+                action: 'Login Failed',
+                message: 'Failed to login. Please check your username/password.',
+                okAction: () => closeMessagePrompt(setMessageBox),
+            }, setMessageBox);
         }
     }
 
@@ -90,6 +107,15 @@ const AdminLoginPage = () => {
                     </Box>
                 </Box>
             </Container>
+            <ConfirmationModal
+                open={messageBox.open}
+                handleClose={closeMessagePrompt}
+                action={messageBox.action}
+                message={messageBox.message}
+                okAction={messageBox.okAction}
+                yesAction={messageBox.yesAction}
+                noAction={messageBox.noAction}
+            />
         </ThemeProvider>
     )
 }
