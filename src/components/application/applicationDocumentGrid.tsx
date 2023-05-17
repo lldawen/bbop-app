@@ -197,11 +197,11 @@ export default function ApplicationDocumentsGrid({ applId, isAdmin, isActive }) 
       align: 'center',
       renderCell: (data) => (
         <>
-        {/* <CustomLink href={`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/download/certificate/${data.id}`} text="Download Certificate" />; */}
-          <CustomLink text=""
+          <a 
+            target="_blank" rel="noopener noreferrer"
             href={`${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/application/document/download/${data.row.documentPath}`}>
               <GridArrowDownwardIcon sx={{ mr: 2, color: '#0063ba' }} />
-          </CustomLink>
+          </a>
           {!isAdmin && (<a href="javascript:void(0)">
             <GridDeleteIcon sx={{ color: '#942230' }} onClick={() => deleteDocument(data.id)} />
           </a>)}

@@ -33,6 +33,7 @@ export default function ApplicationForm({ applId }) {
     const isAdmin = userProfile && userProfile.role == 'ADMIN';
     const isUpdate = applId ? true : false;
     const [isActive, setIsActive] = React.useState(false);
+    const [isDraft, setIsDraft] = React.useState(false);
     const [application, setApplication] = useState({
         applId: '',
         applicantId: !isUpdate && (userProfile.id),
@@ -61,9 +62,6 @@ export default function ApplicationForm({ applId }) {
     const [applTypeList, setApplTypeList] = useState([]);
     const [purposeList, setPurposeList] = useState([]);
     const [paymentModeList, setPaymentModeList] = useState([]);
-
-    const today = dayjs();
-    const todayStartOfTheDay = today.startOf('day');
 
     const router = useRouter();
 
@@ -147,6 +145,7 @@ export default function ApplicationForm({ applId }) {
                         isPaymentComplete: hasPendingPayment(applData.feeAmount, applData.feePaid),
                     }));
                     setIsActive(applData.status == 'O' || applData.status == 'D');
+                    setIsDraft(!applData.status || applData.status == 'D');
                 });
             }
         }
@@ -269,12 +268,19 @@ export default function ApplicationForm({ applId }) {
         }
     }
 
-    function formatDateFieldValue(fieldName: any, newValue: any) {
-        const dateFieldEl: HTMLElement | null = document.getElementsByName(fieldName)[0];
+    function formatDateStr(dateValueStr: string) {
+        const dayVal = dateValueStr.substring(0,2);
+        const monthVal = dateValueStr.substring(3,2);
+        const yearVal = dateValueStr.substring(6,4);
+        return monthVal + '/' + dayVal + '/' + yearVal;
+    }
+
+    function setPaymentDate(newValue: any) {
+        const dateFieldEl: HTMLElement | null = document.getElementsByName('paymentDate')[0];
         if (dateFieldEl && newValue) {
-            dateFieldEl.value = dayjs(newValue).format('DD/MM/YYYY');
+            dateFieldEl.value = dayjs(newValue).format('MM/DD/YYYY');
         }
-        setApplication(fieldName, dateFieldEl.value);
+        setApplicationState(dateFieldEl.name, dateFieldEl.value);
     }
 
     function cancelApplication() {
@@ -412,10 +418,10 @@ export default function ApplicationForm({ applId }) {
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DatePicker 
                                     disabled={!isAdmin || isReadOnly(application.status) || application.feeAmount == 0} 
-                                    format='DD/MM/YYYY' label="Payment Date" 
-                                    value={dayjs(application.paymentDate).format('DD/MM/YYYY')}
-                                    defaultValue={todayStartOfTheDay.format('DD/MM/YYYY')}
-                                    onChange={(newValue) => { formatDateFieldValue('paymentDate', newValue); }} 
+                                    format='DD/MM/YYYY' 
+                                    label="Payment Date" 
+                                    value={dayjs(application.paymentDate)}
+                                    onChange={(newValue) => { setPaymentDate(newValue); }} 
                                 />
                                 <input type="hidden" id="paymentDate" name="paymentDate" />
                             </LocalizationProvider>
@@ -450,7 +456,7 @@ export default function ApplicationForm({ applId }) {
                         <ApplicationDocumentsGrid applId={applId} isAdmin={isAdmin} isActive={isActive} />
                     )}
 
-                    {(!isAdmin && isActive && isUpdate) && (
+                    {(!isAdmin && isDraft && isUpdate) && (
                     <>
                         <FormControlLabel sx={{ mt: 2, mb: 2 }}
                             control={
