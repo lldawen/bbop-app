@@ -12,7 +12,7 @@ const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: 'transparent',
   boxShadow: 'none',
   width: '60%',
-  margin: '200px 0 50px 30px',
+  margin: '50px 0 50px 30px',
   color: '#fff',
   textShadow: '5px 2px 3px #000, 5px 2px 3px #000',
   flexGrow: 1,

@@ -117,7 +117,7 @@ const LoginPage = () => {
                         </Grid>
                         <Grid item>
                         <Link href="/user/create" variant="body2">
-                            {"Don't have an account? Sign Up"}
+                            {"Create User Account"}
                         </Link>
                         </Grid>
                     </Grid>

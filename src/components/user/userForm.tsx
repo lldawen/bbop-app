@@ -136,6 +136,13 @@ const UserForm = ({ userId }) => {
     }
 
     async function confirmSaveUserAccount() {
+        if (user.password !== user.confirmPassword) {
+            closeMessageBox({
+                action: 'Error', 
+                message: 'The passwords you entered do not match.',
+            }, setMessageBox);
+            return;
+        }
         const url = isUpdate 
             ? `${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/api/v1/user/update/${userId}` 
             : `${process.env.NEXT_PUBLIC_BBOP_SERVICE_URL}/auth/register`;
