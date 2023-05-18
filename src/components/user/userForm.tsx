@@ -173,7 +173,7 @@ const UserForm = ({ userId }) => {
     function setDateOfBirth(newValue: any) {
         const dateOfBirthEl: HTMLElement | null = document.getElementById('birthDate');
         if (dateOfBirthEl && newValue) {
-            dateOfBirthEl.value = dayjs(newValue).format('DD/MM/YYYY');
+            dateOfBirthEl.value = dayjs(newValue).format('MM/DD/YYYY');
         }
         setUserDetailState(dateOfBirthEl.name, dateOfBirthEl.value);
     }
